@@ -7,7 +7,7 @@ from tests.learning import TestLearningBase, modify_configurations
 
 class TestLearningModel(TestLearningBase):
 
-    @modify_configurations(1, 1)
+    @modify_configurations(1)
     def test_run_model_sanity(self):
         model = LearningModel(brain=self.brain, domain_size=2, sequence=self.sequence)
         self.assertIn(model.run_model(0), [0, 1])
@@ -16,7 +16,7 @@ class TestLearningModel(TestLearningBase):
         self.assertIn(model.run_model(3), [0, 1])
         self.assertRaises(DomainSizeMismatch, model.run_model, 4)
 
-    @modify_configurations(10, 10)
+    @modify_configurations(10)
     def test_run_model_consistency(self):
         model = LearningModel(brain=self.brain, domain_size=2, sequence=self.sequence)
 
@@ -29,7 +29,7 @@ class TestLearningModel(TestLearningBase):
         self.assertEqual(result_11, result_11_2)
         self.assertEqual(result_00, result_00_2)
 
-    @modify_configurations(50, 30)
+    @modify_configurations(50)
     def test_train_model_sanity(self):
         model = LearningModel(brain=self.brain, domain_size=2, sequence=self.sequence)
 

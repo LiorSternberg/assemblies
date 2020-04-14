@@ -1,7 +1,7 @@
 from collections import namedtuple
 from typing import List, Union
 
-from brain import Brain, Stimulus, Area
+from brain import Brain, Stimulus, Area, OutputArea
 from learning.errors import MissingStimulus, MissingArea, SequenceRunNotInitialized
 
 
@@ -19,14 +19,13 @@ class LearningSequence:
 
             self.activated = False
 
-    def __init__(self, brain: Brain, intermediate_area: str):
+    def __init__(self, brain: Brain):
         """
         :param brain: the brain object
-        :param intermediate_area: the name of the area that shall be connected to the output area (i.e. the area
-        obtaining the representation of the activated stimuli)
         """
         self._brain = brain
-        self.intermediate_area = self._get_area(intermediate_area)
+        # A dummy output area, to symbolize a reference to the actual (yet to be defined) output area
+        self.output_area = OutputArea('output')
 
         self._iterations: List[LearningSequence.Iteration] = []
         self._configuration: Union[LearningSequence.IterationConfiguration, None] = None
@@ -102,6 +101,17 @@ class LearningSequence:
             consecutive_runs=consecutive_runs)
         self._iterations.append(new_iteration)
 
+    def add_stimulus_to_output_iteration(self, source_stimulus: str, consecutive_runs=1):
+        """
+        :param source_stimulus: the name of the source stimulus
+        :param consecutive_runs: the number of times this step shall run consecutively (given its turn)
+        """
+        new_iteration = self.Iteration(
+            source=self._get_stimulus(source_stimulus),
+            target=self.output_area,
+            consecutive_runs=consecutive_runs)
+        self._iterations.append(new_iteration)
+
     def add_area_to_area_iteration(self, source_area: str, target_area: str, consecutive_runs=1):
         """
         :param source_area: the name of the source area
@@ -111,5 +121,16 @@ class LearningSequence:
         new_iteration = self.Iteration(
             source=self._get_area(source_area),
             target=self._get_area(target_area),
+            consecutive_runs=consecutive_runs)
+        self._iterations.append(new_iteration)
+
+    def add_area_to_output_iteration(self, source_area: str, consecutive_runs=1):
+        """
+        :param source_area: the name of the source area
+        :param consecutive_runs: the number of times this step shall run consecutively (given its turn)
+        """
+        new_iteration = self.Iteration(
+            source=self._get_area(source_area),
+            target=self.output_area,
             consecutive_runs=consecutive_runs)
         self._iterations.append(new_iteration)

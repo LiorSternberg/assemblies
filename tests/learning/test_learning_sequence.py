@@ -18,17 +18,19 @@ class TestLearningSequence(TestCase):
         ('three_cycles', 3)
     ])
     def test_sequence_one_run_per_iteration(self, name, number_of_cycles):
-        sequence = LearningSequence(self.brain, intermediate_area=self.utils.area4.name)
-        sequence.add_stimulus_to_area_iteration(self.utils.stim0.name, self.utils.area0.name, 1)
-        sequence.add_stimulus_to_area_iteration(self.utils.stim1.name, self.utils.area1.name, 1)
-        sequence.add_area_to_area_iteration(self.utils.area0.name, self.utils.area2.name, 1)
-        sequence.add_area_to_area_iteration(self.utils.area1.name, self.utils.area2.name, 1)
+        sequence = LearningSequence(self.brain)
+        sequence.add_stimulus_to_area_iteration('A', 'A', 1)
+        sequence.add_stimulus_to_area_iteration('B', 'B', 1)
+        sequence.add_area_to_area_iteration('A', 'C', 1)
+        sequence.add_area_to_area_iteration('B', 'C', 1)
+        sequence.add_area_to_output_iteration('C', 1)
 
         expected_iterations = [
             (self.utils.stim0, self.utils.area0),
             (self.utils.stim1, self.utils.area1),
             (self.utils.area0, self.utils.area2),
             (self.utils.area1, self.utils.area2),
+            (self.utils.area2, sequence.output_area),
         ]
         expected_iterations = expected_iterations * number_of_cycles
 
@@ -37,11 +39,12 @@ class TestLearningSequence(TestCase):
             self.assertEqual(expected_iterations[idx], iteration)
 
     def test_sequence_multiple_runs_per_iteration(self):
-        sequence = LearningSequence(self.brain, intermediate_area=self.utils.area4.name)
-        sequence.add_stimulus_to_area_iteration(self.utils.stim0.name, self.utils.area0.name, 2)
-        sequence.add_stimulus_to_area_iteration(self.utils.stim1.name, self.utils.area1.name, 1)
-        sequence.add_area_to_area_iteration(self.utils.area0.name, self.utils.area2.name, 3)
-        sequence.add_area_to_area_iteration(self.utils.area1.name, self.utils.area2.name, 2)
+        sequence = LearningSequence(self.brain)
+        sequence.add_stimulus_to_area_iteration('A', 'A', 2)
+        sequence.add_stimulus_to_area_iteration('B', 'B', 1)
+        sequence.add_area_to_area_iteration('A', 'C', 3)
+        sequence.add_area_to_area_iteration('B', 'C', 2)
+        sequence.add_area_to_output_iteration('C', 2)
 
         expected_iterations = [
             (self.utils.stim0, self.utils.area0),
@@ -55,6 +58,9 @@ class TestLearningSequence(TestCase):
 
             (self.utils.area1, self.utils.area2),
             (self.utils.area1, self.utils.area2),
+
+            (self.utils.area2, sequence.output_area),
+            (self.utils.area2, sequence.output_area),
         ]
 
         sequence.initialize_run(number_of_cycles=1)
@@ -62,8 +68,8 @@ class TestLearningSequence(TestCase):
             self.assertEqual(expected_iterations[idx], iteration)
 
     def test_sequence_not_initialized(self):
-        sequence = LearningSequence(self.brain, intermediate_area=self.utils.area4.name)
-        sequence.add_stimulus_to_area_iteration(self.utils.stim0.name, self.utils.area0.name, 3)
+        sequence = LearningSequence(self.brain)
+        sequence.add_stimulus_to_area_iteration('A', 'A', 3)
 
         # Iterating without initializing raises an error
         with self.assertRaises(SequenceRunNotInitialized):

@@ -5,7 +5,7 @@ from tests.learning import TestLearningBase, modify_configurations
 
 class TestLearning(TestLearningBase):
 
-    @modify_configurations(100, 30)
+    @modify_configurations(50)
     def test_learning_sanity(self):
         learning = Learning(brain=self.brain, domain_size=2)
 
@@ -19,7 +19,7 @@ class TestLearning(TestLearningBase):
 
         self.assertEqual(1, test_results.accuracy)
 
-    @modify_configurations(1, 1)
+    @modify_configurations(1)
     def test_learning_with_two_separated_models(self):
         learning = Learning(brain=self.brain, domain_size=2)
 
@@ -33,7 +33,7 @@ class TestLearning(TestLearningBase):
 
         self.assertNotEqual(model1.output_area.name, model2.output_area.name)
 
-    @modify_configurations(100, 30)
+    @modify_configurations(50)
     def test_learning_with_two_separated_models_sanity(self):
         learning = Learning(brain=self.brain, domain_size=2)
         learning.sequence = self.sequence

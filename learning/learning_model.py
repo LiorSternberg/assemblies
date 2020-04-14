@@ -71,8 +71,9 @@ class LearningModel:
             raise DomainSizeMismatch('Learning model', 'Training set', self._domain_size, training_set.domain_size)
 
         for data_point in training_set:
-            self._run_unsupervised_projection(data_point.input)
-            self._run_supervised_projection(data_point.output)
+            self._run_learning_projection(input_number=data_point.input,
+                                          brain_mode=BrainMode.TRAINING,
+                                          desired_output=data_point.output)
 
     def test_model(self, test_set: DataSetBase) -> TestResults:
         """
@@ -112,44 +113,51 @@ class LearningModel:
 
         self._validate_input_number(input_number)
 
-        with self._set_training_mode(BrainMode.TESTING):
-            self._run_unsupervised_projection(input_number)
-            self._brain.project(stim_to_area={},
-                                area_to_area={self._sequence.intermediate_area.name: [self.output_area.name]})
+        self._run_learning_projection(input_number, brain_mode=BrainMode.TESTING)
         return self.output_area.winners[0]
 
-    def _run_unsupervised_projection(self, input_number: int) -> None:
+    def _run_learning_projection(self, input_number: int, brain_mode: BrainMode, desired_output=None) -> None:
         """
-        Running the unsupervised learning according to the configured sequence, i.e., setting up the connections
-        between the areas of the brain (listed in the sequence), according to the activated stimuli (dictated by
-        the given binary string)
+        Running the unsupervised and supervised learning according to the configured sequence, i.e., setting up the
+        connections between the areas of the brain (listed in the sequence), according to the activated stimuli
+        (dictated by the given binary string)
         :param input_number: the input number, dictating which stimuli are activated
+        :param brain_mode: the mode of the projecting (TESTING/TRAINING/DEFAULT)
+        :param desired_output: the desired output, in case we are in training mode
         """
         active_stimuli = self._convert_input_to_stimuli(input_number)
 
-        self._sequence.initialize_run(number_of_cycles=LearningConfigurations.NUMBER_OF_UNSUPERVISED_CYCLES)
+        self._sequence.initialize_run(number_of_cycles=LearningConfigurations.NUMBER_OF_LEARNING_CYCLES)
+
+        if brain_mode == BrainMode.TRAINING:
+            self.output_area.desired_output = [desired_output]
 
         for source, target in self._sequence:
             # Only active stimuli are allowed to project
             if isinstance(source, Stimulus) and source.name not in active_stimuli:
                 continue
 
-            self._brain.project(**self._get_projection_parameters(source, target))
+            # Converting the symbolic output area indication to the actual output area
+            if isinstance(target, OutputArea):
+                target = self.output_area
 
-    def _run_supervised_projection(self, output: int) -> None:
+            with self._set_training_mode(brain_mode=self._get_brain_mode(brain_mode, target)):
+                self._brain.project(**self._get_projection_parameters(source, target))
+
+    @staticmethod
+    def _get_brain_mode(requested_brain_mode: BrainMode, target: Union[OutputArea, Area]) -> BrainMode:
         """
-        Running the supervised learning, i.e., setting up the connections between the 'intermediate' area (the one
-        containing the representation of the activated stimuli, obtained in the unsupervised learning) and the output
-        area, while fixating the firing neuron in the output area to correspond with the given binary output
-        :param output: the binary output
+        This function dictates what brain mode the incoming project should run in - according to the requested
+        mode and the target area
+        :param requested_brain_mode: the brain mode of the operation
+        :param: the target area
+        :return: the required brain mode
         """
-        with self._set_training_mode(BrainMode.TRAINING):
-            self.output_area.desired_output = [output]
-            for iteration in range(LearningConfigurations.NUMBER_OF_SUPERVISED_CYCLES):
-                self._brain.project(stim_to_area={},
-                                    area_to_area={
-                                        self._sequence.intermediate_area.name: [self.output_area.name]
-                                    })
+        brain_mode = requested_brain_mode
+        # We only want to set training mode when we are projecting into the output area
+        if requested_brain_mode == BrainMode.TRAINING and not isinstance(target, OutputArea):
+            brain_mode = BrainMode.DEFAULT
+        return brain_mode
 
     @staticmethod
     def _get_projection_parameters(source: Union[Stimulus, Area], target: Area) -> dict:
