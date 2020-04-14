@@ -8,10 +8,10 @@ from tests import TestBrainUtils
 def modify_configurations(number_of_cycles):
     def decorator(function):
         def wrapper(*args, **kwargs):
-            original_data, LearningConfigurations.NUMBER_OF_LEARNING_CYCLES = \
-                LearningConfigurations.NUMBER_OF_LEARNING_CYCLES, number_of_cycles
+            original_data, LearningConfigurations.NUMBER_OF_TRAINING_CYCLES = \
+                LearningConfigurations.NUMBER_OF_TRAINING_CYCLES, number_of_cycles
             result = function(*args, **kwargs)
-            LearningConfigurations.NUMBER_OF_LEARNING_CYCLES = original_data
+            LearningConfigurations.NUMBER_OF_TRAINING_CYCLES = original_data
             return result
         return wrapper
     return decorator

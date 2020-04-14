@@ -127,7 +127,8 @@ class LearningModel:
         """
         active_stimuli = self._convert_input_to_stimuli(input_number)
 
-        self._sequence.initialize_run(number_of_cycles=LearningConfigurations.NUMBER_OF_LEARNING_CYCLES)
+        number_of_cycles = LearningConfigurations.NUMBER_OF_TRAINING_CYCLES if brain_mode == BrainMode.TRAINING else 1
+        self._sequence.initialize_run(number_of_cycles=number_of_cycles)
 
         if brain_mode == BrainMode.TRAINING:
             self.output_area.desired_output = [desired_output]
