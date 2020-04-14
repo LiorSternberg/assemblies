@@ -5,7 +5,7 @@ from typing import List, Union
 
 from brain import Brain, Stimulus, OutputArea, Area
 from learning.data_set.lib.basic_types.data_set_base import DataSetBase
-from learning.errors import DomainSizeMismatch, StimuliMismatch
+from learning.errors import DomainSizeMismatch, StimuliMismatch, ModelInactivated
 from learning.learning_architecture import LearningArchitecture
 from learning.learning_configurations import LearningConfigurations
 from learning.learning_stages.learning_stages import BrainMode
@@ -27,17 +27,36 @@ class LearningModel:
 
         self._accuracy = None
         self._output_area = None
+        self._inactivated = False
+
+    def __del__(self):
+        self.terminate()
+
+    def terminate(self) -> None:
+        """
+        Terminating the model, i.e, deleting the model's output area
+        """
+        if self._inactivated:
+            return
+
+        if self._output_area:
+            self._brain.remove_output_area(self._output_area.name)
+        self._inactivated = True
 
     @property
     def output_area(self) -> OutputArea:
         """
         :return: the output area, containing the model's results
         """
+        if self._inactivated:
+            raise ModelInactivated()
+
         if not self._output_area:
-            if 'Output' in self._brain.output_areas:
-                self._brain.remove_output_area('Output')
-            self._brain.add_output_area('Output')
-            self._output_area = self._brain.output_areas['Output']
+            output_area_name = 'Output_{}'.format(id(self))
+            if output_area_name in self._brain.output_areas:
+                self._brain.remove_output_area(output_area_name)
+            self._brain.add_output_area(output_area_name)
+            self._output_area = self._brain.output_areas[output_area_name]
         return self._output_area
 
     def train_model(self, training_set: DataSetBase) -> None:
@@ -45,6 +64,9 @@ class LearningModel:
         This function trains the model with the given training set
         :param training_set: the set by which to train the model
         """
+        if self._inactivated:
+            raise ModelInactivated()
+
         if training_set.domain_size != self._domain_size:
             raise DomainSizeMismatch('Learning model', 'Training set', self._domain_size, training_set.domain_size)
 
@@ -59,6 +81,9 @@ class LearningModel:
         :param test_set: the set by which to test the model's accuracy
         :return: the model's accuracy
         """
+        if self._inactivated:
+            raise ModelInactivated()
+
         if test_set.domain_size != self._domain_size:
             raise DomainSizeMismatch('Learning model', 'Test set', self._domain_size, test_set.domain_size)
 
@@ -82,6 +107,9 @@ class LearningModel:
         :param input_number: the input for the model to calculate
         :return: the result of the model to the given input
         """
+        if self._inactivated:
+            raise ModelInactivated()
+
         self._validate_input_number(input_number)
 
         with self._set_training_mode(BrainMode.TESTING):
@@ -176,7 +204,7 @@ class LearningModel:
     @contextmanager
     def _set_training_mode(self, brain_mode: BrainMode) -> None:
         """
-        Setting the brain to be of mode=TRAINING, and later returns its original mode
+        Setting the brain to be of the given mode, and later returns its original mode
         """
         original_mode, self._brain.mode = self._brain.mode, brain_mode
         yield

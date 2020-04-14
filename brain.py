@@ -176,9 +176,9 @@ class Brain:
         assert name in self.output_areas, "an output area with the given name doesn't exist"
 
         self.output_areas.pop(name)
-        for connectome in self.output_stimuli_connectomes.items():
+        for connectome in self.output_stimuli_connectomes.values():
             connectome.pop(name, None)
-        for connectome in self.output_connectomes.items():
+        for connectome in self.output_connectomes.values():
             connectome.pop(name, None)
 
     def add_area(self, name: str, n: int, k: int, beta: float) -> None:

@@ -29,7 +29,7 @@ class TestLearningModel(TestLearningBase):
         self.assertEqual(result_11, result_11_2)
         self.assertEqual(result_00, result_00_2)
 
-    @modify_configurations(30, 30)
+    @modify_configurations(50, 30)
     def test_train_model_sanity(self):
         model = LearningModel(brain=self.brain, domain_size=2, architecture=self.architecture)
 
@@ -53,3 +53,15 @@ class TestLearningModel(TestLearningBase):
         self.assertEqual(['A', 'D'], result_01)
         self.assertEqual(['B', 'C'], result_10)
         self.assertEqual(['B', 'D'], result_11)
+
+    def test_model_termination(self):
+        model = LearningModel(brain=self.brain, domain_size=2, architecture=self.architecture)
+
+        output_area_name = model.output_area.name
+        self.assertIsNotNone(self.brain.output_areas.get(output_area_name))
+
+        model.terminate()
+        self.assertIsNone(self.brain.output_areas.get(output_area_name))
+
+        training_set = create_data_set_from_list([0, 1, 0, 1])
+        self.assertRaises(Exception, model.train_model, training_set)

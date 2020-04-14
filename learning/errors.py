@@ -39,7 +39,7 @@ class DomainSizeMismatch(ValuesMismatch):
         self._actual_object = actual_object
 
     def __str__(self) -> str:
-        return f"The domain size of {self._actual_object} is expected to the same as the domain size of " \
+        return f"The domain size of {self._actual_object} is expected to be the same as the domain size of " \
                f"{self._expected_object} (i.e. {self._expected_value}), but instead it's of size {self._actual_value}"
 
 
@@ -49,3 +49,8 @@ class StimuliMismatch(ValuesMismatch):
         
     def __str__(self) -> str:
         return f"Number of stimuli should be {self._expected_value}. Instead, it's {self._actual_value}"
+
+
+class ModelInactivated(Exception):
+    def __str__(self) -> str:
+        return f"Model has been inactivated"
