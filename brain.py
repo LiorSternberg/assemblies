@@ -123,11 +123,16 @@ class Brain:
     Attributes:
         areas: A mapping from area names to Area objects representing them.
         stimuli: A mapping from stimulus names to Stimulus objects representing them.
-        stimuli_connectomes: Maps each pair of (stimulus,area) to the ndarray representing the synaptic weights among
-            stimulus neurons and neurons in the support of area.
-        connectomes: Maps each pair of areas to the ndarray representing the synaptic weights among neurons in
-            the support.
+        stimuli_connectomes: Maps each pair of (stimulus,area), where area is not an OutputArea, to the ndarray
+            representing the synaptic weights among stimulus neurons and neurons in the support of area.
+        connectomes: Maps each pair of non-OutputArea areas to the ndarray representing the synaptic weights among
+            neurons in the support.
+        output_stimuli_connectomes: Maps each pair of (stimullus, output_area) to the ndarray representing the
+            synaptic weights among stimulus neurons and neurons in the support of output_area.
+        output_connectomes: Maps each pair of (area, output_area) to the ndarray representing the synaptic weights
+            among neurons in the support.
         p: Probability of connectome (edge) existing between two neurons (vertices)
+        mode: The mode of the brain (either default, train, or test)
     """
 
     def __init__(self, p: float):
@@ -145,7 +150,7 @@ class Brain:
 
         self.p: float = p
 
-        self.mode = BrainMode.DEFAULT
+        self.mode: BrainMode = BrainMode.DEFAULT
 
     def get_stimulus_connectomes(self, stimulus_name, area_name):
         if area_name in self.output_areas:
