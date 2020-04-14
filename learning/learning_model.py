@@ -6,7 +6,7 @@ from typing import List, Union
 from brain import Brain, Stimulus, OutputArea, Area
 from learning.data_set.lib.basic_types.data_set_base import DataSetBase
 from learning.errors import DomainSizeMismatch, StimuliMismatch, ModelInactivated
-from learning.learning_architecture import LearningArchitecture
+from learning.learning_sequence import LearningSequence
 from learning.learning_configurations import LearningConfigurations
 from learning.learning_stages.learning_stages import BrainMode
 
@@ -17,13 +17,13 @@ TestResults = namedtuple('TestResults', ['accuracy',
 
 class LearningModel:
 
-    def __init__(self, brain: Brain, domain_size: int, architecture: LearningArchitecture):
+    def __init__(self, brain: Brain, domain_size: int, sequence: LearningSequence):
         self._brain = brain
         # Fixating the stimuli for a deterministic input<-->stimuli conversion
         self._stimuli = list(brain.stimuli.keys())
 
         self._domain_size = domain_size
-        self._architecture = architecture
+        self._sequence = sequence
 
         self._accuracy = None
         self._output_area = None
@@ -115,21 +115,21 @@ class LearningModel:
         with self._set_training_mode(BrainMode.TESTING):
             self._run_unsupervised_projection(input_number)
             self._brain.project(stim_to_area={},
-                                area_to_area={self._architecture.intermediate_area.name: [self.output_area.name]})
+                                area_to_area={self._sequence.intermediate_area.name: [self.output_area.name]})
         return self.output_area.winners[0]
 
     def _run_unsupervised_projection(self, input_number: int) -> None:
         """
-        Running the unsupervised learning according to the configured architecture, i.e., setting up the connections
-        between the areas of the brain (listed in the architecture), according to the activated stimuli (dictated by
+        Running the unsupervised learning according to the configured sequence, i.e., setting up the connections
+        between the areas of the brain (listed in the sequence), according to the activated stimuli (dictated by
         the given binary string)
         :param input_number: the input number, dictating which stimuli are activated
         """
         active_stimuli = self._convert_input_to_stimuli(input_number)
 
-        self._architecture.initialize_run(number_of_cycles=LearningConfigurations.NUMBER_OF_UNSUPERVISED_CYCLES)
+        self._sequence.initialize_run(number_of_cycles=LearningConfigurations.NUMBER_OF_UNSUPERVISED_CYCLES)
 
-        for source, target in self._architecture:
+        for source, target in self._sequence:
             # Only active stimuli are allowed to project
             if isinstance(source, Stimulus) and source.name not in active_stimuli:
                 continue
@@ -148,13 +148,13 @@ class LearningModel:
             for iteration in range(LearningConfigurations.NUMBER_OF_SUPERVISED_CYCLES):
                 self._brain.project(stim_to_area={},
                                     area_to_area={
-                                        self._architecture.intermediate_area.name: [self.output_area.name]
+                                        self._sequence.intermediate_area.name: [self.output_area.name]
                                     })
 
     @staticmethod
     def _get_projection_parameters(source: Union[Stimulus, Area], target: Area) -> dict:
         """
-        Converting the source and target (given by the architecture) to parameters for brain.project
+        Converting the source and target (given by the learning sequence) to parameters for brain.project
         :param source: the source stimulus/area
         :param target: the target area
         :return: the relevant parameters for projection

@@ -21,9 +21,9 @@ class ItemNotInitialized(Exception):
         return f"{self._item_name} must be initialized first"
 
 
-class ArchitectureRunningNotInitialized(Exception):
+class SequenceRunNotInitialized(Exception):
     def __str__(self) -> str:
-        return f"The architecture instance must be reset before starting to iterate over it"
+        return f"The learning sequence instance must be reset before starting to iterate over it"
 
 
 class ValuesMismatch(Exception):

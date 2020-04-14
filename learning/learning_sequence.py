@@ -2,10 +2,10 @@ from collections import namedtuple
 from typing import List, Union
 
 from brain import Brain, Stimulus, Area
-from learning.errors import MissingStimulus, MissingArea, ArchitectureRunningNotInitialized
+from learning.errors import MissingStimulus, MissingArea, SequenceRunNotInitialized
 
 
-class LearningArchitecture:
+class LearningSequence:
 
     Iteration = namedtuple('Iteration', ['source', 'target', 'consecutive_runs'])
 
@@ -28,17 +28,17 @@ class LearningArchitecture:
         self._brain = brain
         self.intermediate_area = self._get_area(intermediate_area)
 
-        self._iterations: List[LearningArchitecture.Iteration] = []
-        self._configuration: Union[LearningArchitecture.IterationConfiguration, None] = None
+        self._iterations: List[LearningSequence.Iteration] = []
+        self._configuration: Union[LearningSequence.IterationConfiguration, None] = None
 
     def __iter__(self):
         if self._configuration is None or self._configuration.activated:
-            raise ArchitectureRunningNotInitialized()
+            raise SequenceRunNotInitialized()
         return self
 
     def __next__(self):
         if self._configuration is None:
-            raise ArchitectureRunningNotInitialized()
+            raise SequenceRunNotInitialized()
 
         self._configuration.current_run += 1
         if self._configuration.current_run >= self._iterations[self._configuration.current_iter].consecutive_runs:
@@ -61,7 +61,7 @@ class LearningArchitecture:
 
     def initialize_run(self, number_of_cycles=float('inf')):
         """
-        Setting up the running of the architecture iterations
+        Setting up the running of the sequence iterations
         :param number_of_cycles: the number of full cycles (of all defined iterations) that should be run consecutively
         """
         self._configuration = self.IterationConfiguration(current_cycle=0,

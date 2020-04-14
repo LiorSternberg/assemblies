@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from learning.learning_architecture import LearningArchitecture
+from learning.learning_sequence import LearningSequence
 from learning.learning_configurations import LearningConfigurations
 from tests import TestBrainUtils
 
@@ -36,11 +36,11 @@ class TestLearningBase(TestCase):
         self.stim_c = utils.stim2
         self.stim_d = utils.stim3
 
-        self.architecture = LearningArchitecture(self.brain, intermediate_area=self.area_c.name)
-        self.architecture.add_stimulus_to_area_iteration('A', 'A')
-        self.architecture.add_stimulus_to_area_iteration('B', 'A')
-        self.architecture.add_stimulus_to_area_iteration('C', 'B')
-        self.architecture.add_stimulus_to_area_iteration('D', 'B')
+        self.sequence = LearningSequence(self.brain, intermediate_area=self.area_c.name)
+        self.sequence.add_stimulus_to_area_iteration('A', 'A')
+        self.sequence.add_stimulus_to_area_iteration('B', 'A')
+        self.sequence.add_stimulus_to_area_iteration('C', 'B')
+        self.sequence.add_stimulus_to_area_iteration('D', 'B')
 
-        self.architecture.add_area_to_area_iteration('A', 'C')
-        self.architecture.add_area_to_area_iteration('B', 'C')
+        self.sequence.add_area_to_area_iteration('A', 'C')
+        self.sequence.add_area_to_area_iteration('B', 'C')

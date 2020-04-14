@@ -11,7 +11,7 @@ class TestLearning(TestLearningBase):
 
         data_set = create_data_set_from_list([0, 1, 0, 1])
 
-        learning.architecture = self.architecture
+        learning.sequence = self.sequence
         learning.training_set = data_set
 
         model = learning.create_model()
@@ -25,7 +25,7 @@ class TestLearning(TestLearningBase):
 
         data_set = create_data_set_from_list([0, 1, 0, 1])
 
-        learning.architecture = self.architecture
+        learning.sequence = self.sequence
         learning.training_set = data_set
 
         model1 = learning.create_model()
@@ -36,7 +36,7 @@ class TestLearning(TestLearningBase):
     @modify_configurations(100, 30)
     def test_learning_with_two_separated_models_sanity(self):
         learning = Learning(brain=self.brain, domain_size=2)
-        learning.architecture = self.architecture
+        learning.sequence = self.sequence
 
         data_set1 = create_data_set_from_list([0, 1, 0, 1])
         learning.training_set = data_set1
