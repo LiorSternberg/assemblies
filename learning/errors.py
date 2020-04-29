@@ -1,3 +1,6 @@
+from typing import List
+
+
 class MissingItem(Exception):
     def __init__(self, item_name: str) -> None:
         self._item_name = item_name
@@ -51,6 +54,27 @@ class StimuliMismatch(ValuesMismatch):
         return f"Number of stimuli should be {self._expected_value}. Instead, it's {self._actual_value}"
 
 
-class ModelInactivated(Exception):
+class SequenceFinalizationError(Exception):
+
     def __str__(self) -> str:
-        return f"Model has been inactivated"
+        return "Sequence has already been finalized"
+
+
+class NoPathException(Exception):
+    def __init__(self, stimulus, output_area):
+        self._stimulus = stimulus
+        self._output_area = output_area
+
+    def __str__(self) -> str:
+        return f"A projection path between stimulus {self._stimulus} and output area {self._output_area} doesn't exist"
+
+
+class IllegalOutputAreasException(Exception):
+    def __init__(self, output_areas: List[str]):
+        self._output_areas = output_areas
+
+    def __str__(self) -> str:
+        if len(self._output_areas) == 0:
+            return "An output area must be part of the sequence"
+        return f"Found {len(self._output_areas)} output areas ({','.join(self._output_areas)}), while there can " \
+               f"only be one"

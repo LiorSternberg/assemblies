@@ -1,5 +1,4 @@
 from brain import Brain
-from learning.data_set.lib.basic_types.partial_data_set import PartialDataSet
 from learning.data_set.lib.training_set import TrainingSet
 from learning.errors import ItemNotInitialized
 from learning.learning_sequence import LearningSequence
@@ -35,13 +34,15 @@ class Learning:
     def training_set(self, training_set: TrainingSet):
         self._training_set = training_set
 
-    def create_model(self) -> LearningModel:
+    def create_model(self, number_of_sequence_cycles=None) -> LearningModel:
         """
         This function creates a learning model according to the configured preferences, and trains it
+        :param number_of_sequence_cycles: the number of times the entire sequence should run while on training mode.
+            If not given, the default value is taken from LearningConfigurations
         :return: the learning model
         """
         learning_model = LearningModel(brain=self.brain,
                                        domain_size=self.domain_size,
                                        sequence=self.sequence)
-        learning_model.train_model(training_set=self.training_set)
+        learning_model.train_model(training_set=self.training_set, number_of_sequence_cycles=number_of_sequence_cycles)
         return learning_model
