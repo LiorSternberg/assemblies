@@ -1,6 +1,6 @@
 from learning.data_set.constructors import create_data_set_from_list
 from learning.learning import Learning
-from tests.learning import TestLearningBase
+from tests.test_learning import TestLearningBase
 
 
 class TestLearning(TestLearningBase):

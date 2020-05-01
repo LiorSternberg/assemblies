@@ -10,7 +10,7 @@ from scipy.stats import truncnorm
 import math
 import random
 
-from learning.learning_stages.learning_stages import BrainMode
+from learning.learning_stages.learning_stages import BrainLearningMode
 
 
 class LazyBrain(Brain):
@@ -204,7 +204,7 @@ class LazyBrain(Brain):
             # get num_first_winners (think something small)
             # can generate area._new_winners, note the new indices
             both = prev_winner_inputs + potential_new_winners
-            if self.mode != BrainMode.TRAINING or not isinstance(area, OutputArea):
+            if self.learning_mode != BrainLearningMode.TRAINING or not isinstance(area, OutputArea):
                 new_winner_indices = heapq.nlargest(area.k, list(range(len(both))), both.__getitem__)
             else:
                 new_winner_indices = area.desired_output
@@ -273,7 +273,7 @@ class LazyBrain(Brain):
                         first_winner_to_inputs[i][input_index]
                 beta = area.stimulus_beta[stim]
 
-                if self.mode != BrainMode.TESTING:
+                if self.learning_mode != BrainLearningMode.TESTING:
                     # connectomes of winners are now stronger
                     for i in area._new_winners:
                         self.get_stimulus_connectomes(stim, area.name)[i] *= (1 + beta)
@@ -316,7 +316,7 @@ class LazyBrain(Brain):
                         # j that is a winner and did not fire has connectome 0 (since otherwise, it would fire)
 
                 beta = area.area_beta[from_area]
-                if self.mode != BrainMode.TESTING:
+                if self.learning_mode != BrainLearningMode.TESTING:
                     # connectomes of winners are now stronger
                     for i in area._new_winners:
                         for j in from_area_winners:

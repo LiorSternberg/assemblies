@@ -1,14 +1,14 @@
 import math
 from collections import namedtuple
 from contextlib import contextmanager
-from typing import List, Union
+from typing import List
 
-from brain import Brain, Stimulus, OutputArea, Area
+from brain import Brain, OutputArea
 from learning.data_set.lib.basic_types.data_set_base import DataSetBase
 from learning.errors import DomainSizeMismatch, StimuliMismatch
-from learning.learning_sequence import LearningSequence
 from learning.learning_configurations import LearningConfigurations
-from learning.learning_stages.learning_stages import BrainMode
+from learning.learning_sequence import LearningSequence
+from learning.learning_stages.learning_stages import BrainLearningMode
 
 TestResults = namedtuple('TestResults', ['accuracy',
                                          'true_positive',
@@ -51,7 +51,7 @@ class LearningModel:
 
         for data_point in training_set:
             self._run_learning_projection(input_number=data_point.input,
-                                          brain_mode=BrainMode.TRAINING,
+                                          brain_mode=BrainLearningMode.TRAINING,
                                           desired_output=data_point.output,
                                           number_of_sequence_cycles=number_of_sequence_cycles)
 
@@ -88,10 +88,10 @@ class LearningModel:
         """
         self._validate_input_number(input_number)
 
-        self._run_learning_projection(input_number, brain_mode=BrainMode.TESTING)
+        self._run_learning_projection(input_number, brain_mode=BrainLearningMode.TESTING)
         return self.output_area.winners[0]
 
-    def _run_learning_projection(self, input_number: int, brain_mode: BrainMode, desired_output=None,
+    def _run_learning_projection(self, input_number: int, brain_mode: BrainLearningMode, desired_output=None,
                                  number_of_sequence_cycles=1) -> None:
         """
         Running the unsupervised and supervised learning according to the configured sequence, i.e., setting up the
@@ -149,10 +149,10 @@ class LearningModel:
             raise DomainSizeMismatch('Learning model', input_number, self._domain_size, input_domain)
 
     @contextmanager
-    def _set_brain_mode(self, brain_mode: BrainMode) -> None:
+    def _set_brain_mode(self, brain_mode: BrainLearningMode) -> None:
         """
         Setting the brain to be of the given mode, and later returns its original mode
         """
-        original_mode, self._brain.mode = self._brain.mode, brain_mode
+        original_mode, self._brain.learning_mode = self._brain.learning_mode, brain_mode
         yield
-        self._brain.mode = original_mode
+        self._brain.learning_mode = original_mode

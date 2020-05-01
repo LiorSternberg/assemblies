@@ -5,7 +5,7 @@ import numpy as np
 import heapq
 from numpy.core._multiarray_umath import ndarray
 
-from learning.learning_stages.learning_stages import BrainMode
+from learning.learning_stages.learning_stages import BrainLearningMode
 
 
 class NonLazyBrain(Brain):
@@ -147,7 +147,7 @@ class NonLazyBrain(Brain):
         update area._new_winners, area.support and area._new_support_size
         :return: number of winners that weren't in area.support before
         """
-        if self.mode != BrainMode.TRAINING or not isinstance(area, OutputArea):
+        if self.learning_mode != BrainLearningMode.TRAINING or not isinstance(area, OutputArea):
             area._new_winners = heapq.nlargest(area.k, list(range(len(inputs))), inputs.__getitem__)
         else:
             area._new_winners = area.desired_output
@@ -190,6 +190,6 @@ class NonLazyBrain(Brain):
         """
         inputs = self.project_into_calculate_inputs(area, from_stimuli, from_areas)
         num_first_winners = self.project_into_calculate_winners(area, inputs)
-        if self.mode != BrainMode.TESTING:
+        if self.learning_mode != BrainLearningMode.TESTING:
             self.project_into_update_connectomes(area, from_stimuli, from_areas)
         return num_first_winners

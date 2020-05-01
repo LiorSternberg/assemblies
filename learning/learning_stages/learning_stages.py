@@ -1,7 +1,7 @@
 from enum import Enum, auto
 
 
-class BrainMode(Enum):
+class BrainLearningMode(Enum):
     """
     An enum for each of the brain modes:
         DEFAULT - normal, standard behaviour, where the outcome of neurons firing is the strengthening of the weight of

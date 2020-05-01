@@ -23,7 +23,7 @@ from typing import List, Mapping, Dict
 from collections import defaultdict
 from numpy.core._multiarray_umath import ndarray
 
-from learning.learning_stages.learning_stages import BrainMode
+from learning.learning_stages.learning_stages import BrainLearningMode
 
 
 class Stimulus:
@@ -132,7 +132,7 @@ class Brain:
         output_connectomes: Maps each pair of (area, output_area) to the ndarray representing the synaptic weights
             among neurons in the support.
         p: Probability of connectome (edge) existing between two neurons (vertices)
-        mode: The mode of the brain (either default, train, or test)
+        learning_mode: The mode of the brain (either default, train, or test). Used for learning.
     """
 
     def __init__(self, p: float):
@@ -150,7 +150,7 @@ class Brain:
 
         self.p: float = p
 
-        self.mode: BrainMode = BrainMode.DEFAULT
+        self.learning_mode: BrainLearningMode = BrainLearningMode.DEFAULT
 
     def get_stimulus_connectomes(self, stimulus_name, area_name):
         if area_name in self.output_areas:

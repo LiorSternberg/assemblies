@@ -2,7 +2,7 @@ from learning.data_set.constructors import create_data_set_from_list
 from learning.errors import DomainSizeMismatch
 
 from learning.learning_model import LearningModel
-from tests.learning import TestLearningBase
+from tests.test_learning import TestLearningBase
 
 
 class TestLearningModel(TestLearningBase):
