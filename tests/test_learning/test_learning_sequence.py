@@ -4,13 +4,13 @@ from parameterized import parameterized
 
 from learning.errors import SequenceRunNotInitialized, IllegalOutputAreasException, NoPathException
 from learning.learning_sequence import LearningSequence
-from tests import TestBrainUtils
+from tests.brain_test_utils import BrainTestUtils
 
 
 class TestLearningSequence(TestCase):
 
     def setUp(self) -> None:
-        self.utils = TestBrainUtils(lazy=False)
+        self.utils = BrainTestUtils(lazy=False)
         self.brain = self.utils.create_brain(number_of_areas=5, number_of_stimuli=4, add_output_area=True)
 
     @parameterized.expand([

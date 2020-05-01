@@ -2,10 +2,10 @@ from learning.data_set.constructors import create_data_set_from_list
 from learning.errors import DomainSizeMismatch
 
 from learning.learning_model import LearningModel
-from tests.test_learning import TestLearningBase
+from tests.test_learning.learning_test_base import LearningTestBase
 
 
-class TestLearningModel(TestLearningBase):
+class TestLearningModel(LearningTestBase):
 
     def test_run_model_sanity(self):
         model = LearningModel(brain=self.brain, domain_size=2, sequence=self.sequence)

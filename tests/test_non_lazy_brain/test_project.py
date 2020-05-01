@@ -2,11 +2,11 @@ from unittest import skip
 
 from brain import OutputArea
 from learning.learning_stages.learning_stages import BrainLearningMode
-from tests.test_non_lazy_brain import TestNonLazyBrain
+from tests.test_non_lazy_brain.non_lazy_brain_test_base import NonLazyBrainTestBase
 from utils import get_matrix_max, get_matrix_min
 
 
-class TestProject(TestNonLazyBrain):
+class TestProject(NonLazyBrainTestBase):
 
     def test_project_from_area_to_itself(self):
         brain = self.utils.create_and_stimulate_brain(number_of_areas=1, number_of_stimulated_areas=1)

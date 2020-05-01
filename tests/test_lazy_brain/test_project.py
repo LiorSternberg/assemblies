@@ -1,10 +1,10 @@
 from brain import OutputArea
 from learning.learning_stages.learning_stages import BrainLearningMode
-from tests.test_lazy_brain import TestLazyBrain
+from tests.test_lazy_brain.lazy_brain_test_base import LazyBrainTestBase
 from utils import get_matrix_max, get_matrix_min
 
 
-class TestProject(TestLazyBrain):
+class TestProject(LazyBrainTestBase):
 
     def test_project_from_area_to_itself(self):
         brain = self.utils.create_and_stimulate_brain(number_of_areas=1, number_of_stimulated_areas=1)
