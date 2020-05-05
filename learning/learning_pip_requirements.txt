@@ -1,2 +1,3 @@
+tabulate
 networkx >= 2.4
 parameterized >= 0.7.4
