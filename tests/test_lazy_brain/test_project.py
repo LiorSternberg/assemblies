@@ -113,12 +113,12 @@ class TestProject(LazyBrainTestBase):
         brain.add_stimulus(stimulus_name, k=self.utils.area_size)
 
         connectome_before_projection = brain.output_stimuli_connectomes[stimulus_name][output_area.name]
-        self.assertAlmostEqual(1, get_matrix_max(connectome_before_projection))
+        self.assertEqual(0, get_matrix_max(connectome_before_projection))
         self.assertEqual(0, get_matrix_min(connectome_before_projection))
 
         brain.project(area_to_area={}, stim_to_area={stimulus_name: [output_area.name]})
 
         connectome_after_projection = brain.output_stimuli_connectomes[stimulus_name][output_area.name]
         self.assertEqual(output_area.k, len(output_area.winners))
-        self.assertNotAlmostEqual(1, get_matrix_max(connectome_after_projection))
+        self.assertEqual(0, get_matrix_max(connectome_after_projection))
         self.assertEqual(0, get_matrix_min(connectome_after_projection))

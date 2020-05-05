@@ -53,7 +53,7 @@ class TestProject(NonLazyBrainTestBase):
         self.assertEqual(origin_area.k, len(origin_area.winners))
         self.assertEqual(output_area.k, len(output_area.winners))
         self.assertAlmostEqual((1 + output_area.beta) * 1, get_matrix_max(connectome_after_projection))
-        self.assertEqual(0, get_matrix_min(connectome_after_projection))
+        self.assertEqual(1, get_matrix_min(connectome_after_projection))
 
     def test_project_from_area_to_output_area_with_size_2(self):
         # Setting up desired OutputArea size
@@ -74,7 +74,7 @@ class TestProject(NonLazyBrainTestBase):
             self.assertEqual(origin_area.k, len(origin_area.winners))
             self.assertEqual(1, len(output_area.winners))
             self.assertAlmostEqual((1 + output_area.beta) * 1, get_matrix_max(connectome_after_projection))
-            self.assertEqual(0, get_matrix_min(connectome_after_projection))
+            self.assertEqual(1, get_matrix_min(connectome_after_projection))
 
     def test_betas_have_no_effect_only_testing_mode(self):
         brain = self.utils.create_and_stimulate_brain(number_of_areas=1, number_of_stimulated_areas=1,
