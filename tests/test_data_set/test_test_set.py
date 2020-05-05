@@ -18,8 +18,11 @@ class TestTestSet(TestCase):
             self.assertIsInstance(data_point, DataPoint)
 
         # reuse
+        reused = 0
         for data_point in s:
+            reused += 1
             self.assertIsInstance(data_point, DataPoint)
+        self.assertEqual(3, reused)
 
     def test_test_set_length_is_correct(self):
         mask = create_explicit_mask_from_list([0, 0, 1, 1, 0, 1, 1, 1])

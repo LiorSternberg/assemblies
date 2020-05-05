@@ -57,8 +57,11 @@ class TestCallableDataSet(TestCase):
             self.assertEqual(expected[i], data_point.output)
 
         # reuse
+        reused = 0
         for i, data_point in enumerate(s):
+            reused += 1
             self.assertEqual(expected[i], data_point.output)
+        self.assertEqual(2 ** s.domain_size, reused)
 
     def test_data_set_with_full_noise_flips_all_results(self):
         expected_not_noisy = [

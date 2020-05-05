@@ -1,7 +1,7 @@
 import random
 
 from learning.data_set.data_point import DataPoint
-from learning.data_set.data_set import DataSet
+from learning.data_set.lib.basic_types.data_set_base import DataSetBase
 from learning.data_set.lib.basic_types.partial_data_set import PartialDataSet
 from learning.data_set.mask import Mask
 
@@ -16,23 +16,27 @@ class TrainingSet(PartialDataSet):
     to the training phase will be outputted at random, so repetitions are likely,
     and are expected to occur if the training set is set to be long enough.
     """
-    def __init__(self, base_data_set: DataSet, mask: Mask, length: int = None,
+    def __init__(self, base_data_set: DataSetBase, mask: Mask, length: int = None,
                  noise_probability: float = 0.) -> None:
         super().__init__(base_data_set, mask, noise_probability)
-        self._count_left = length
-        self._range_max = 2 ** self.domain_size - 1
+        self._length = length
         self._random = random.Random()
+        self._shuffled_indices = self._get_training_indices()
+        self._inner_index = -1
+
+    def _get_training_indices(self):
+        return [index for index in range(2 ** self.domain_size) if self._mask.in_training_set(index)]
+
+    def _increment_inner_index(self):
+        self._inner_index = (self._inner_index + 1) % (len(self._shuffled_indices))
+        if self._inner_index == 0:
+            self._random.shuffle(self._shuffled_indices)
 
     def _next(self) -> DataPoint:
-        if self._count_left == 0:
+        self._value += 1
+        if self._value == self._length:
             self.reset()
             raise StopIteration()
 
-        mask_value = 0
-        index = 0
-        while not mask_value:
-            index = self._random.randint(0, self._range_max)
-            mask_value = self._mask.in_training_set(index)
-
-        self._count_left -= 1
-        return self._base_data_set[index]
+        self._increment_inner_index()
+        return self._base_data_set[self._shuffled_indices[self._inner_index]]
