@@ -1,5 +1,5 @@
 from learning.data_set.constructors import create_data_set_from_list
-from learning.learning import Learning
+from learning.learning_task import Learning
 from tests.test_learning.learning_test_base import LearningTestBase
 
 
@@ -7,7 +7,6 @@ class TestLearning(LearningTestBase):
 
     def test_learning_sanity(self):
         learning = Learning(brain=self.brain, domain_size=2)
-
         data_set = create_data_set_from_list([0, 1, 0, 1])
 
         learning.sequence = self.sequence
@@ -15,7 +14,6 @@ class TestLearning(LearningTestBase):
 
         model = learning.create_model(number_of_sequence_cycles=50)
         test_results = model.test_model(data_set)
-
         self.assertEqual(1, test_results.accuracy)
 
     def test_learning_with_two_separated_models_sanity(self):

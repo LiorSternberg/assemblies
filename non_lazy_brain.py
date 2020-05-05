@@ -90,11 +90,11 @@ class NonLazyBrain(Brain):
         name = area.name
         for stim_name, stim_connectomes in self.stimuli_connectomes.items():
             stimulus: Stimulus = self.stimuli[stim_name]
-            stim_connectomes[name] = np.random.binomial(1, self.p, (stimulus.k, area.n)).astype(dtype='f')
+            stim_connectomes[name] = np.zeros((stimulus.k, area.n), dtype='f')
             self.output_areas[name].stimulus_beta[stim_name] = beta
 
         for other_area_name, other_area in self.areas.items():
-            self.output_connectomes[other_area_name][name] = np.random.binomial(1, self.p, (other_area.n, area.n)).astype(dtype='f')
+            self.output_connectomes[other_area_name][name] = np.ones((other_area.n, area.n), dtype='f')
             area.area_beta[other_area_name] = beta
 
     def conectomes_init_stimulus(self, stimulus: Stimulus, name: str):

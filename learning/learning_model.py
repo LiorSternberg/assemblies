@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from typing import List
 
 from brain import Brain, OutputArea
-from learning.data_set.lib.basic_types.data_set_base import DataSetBase
+from learning.data_set.data_set import DataSet
 from learning.errors import DomainSizeMismatch, StimuliMismatch
 from learning.learning_configurations import LearningConfigurations
 from learning.learning_sequence import LearningSequence
@@ -25,7 +25,7 @@ class LearningModel:
         """
         self._brain = brain
         # Fixating the stimuli for a deterministic input<-->stimuli conversion
-        self._stimuli = list(brain.stimuli.keys())
+        self._stimuli = list(brain.stimuli.keys())   # TODO: Fix? (A=0, C=1), (B=0, D=1)
 
         self._domain_size = domain_size
         self._sequence = sequence
@@ -37,7 +37,7 @@ class LearningModel:
         """
         return self._sequence.output_area
 
-    def train_model(self, training_set: DataSetBase, number_of_sequence_cycles=None) -> None:
+    def train_model(self, training_set: DataSet, number_of_sequence_cycles=None) -> None:
         """
         This function trains the model with the given training set
         :param training_set: the set by which to train the model
@@ -55,7 +55,7 @@ class LearningModel:
                                           desired_output=data_point.output,
                                           number_of_sequence_cycles=number_of_sequence_cycles)
 
-    def test_model(self, test_set: DataSetBase) -> TestResults:
+    def test_model(self, test_set: DataSet) -> TestResults:
         """
         Given a test set, this function runs the model on the data points' inputs - and compares it to the expected
         output. It later saves the percentage of the matching runs

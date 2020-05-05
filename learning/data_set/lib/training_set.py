@@ -21,6 +21,7 @@ class TrainingSet(PartialDataSet):
         super().__init__(base_data_set, mask, noise_probability)
         self._count_left = length
         self._range_max = 2 ** self.domain_size - 1
+        self._random = random.Random()
 
     def _next(self) -> DataPoint:
         if self._count_left == 0:
@@ -30,7 +31,7 @@ class TrainingSet(PartialDataSet):
         mask_value = 0
         index = 0
         while not mask_value:
-            index = random.randint(0, self._range_max)
+            index = self._random.randint(0, self._range_max)
             mask_value = self._mask.in_training_set(index)
 
         self._count_left -= 1
