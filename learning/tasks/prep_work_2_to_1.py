@@ -1,6 +1,5 @@
 from collections import defaultdict
 from contextlib import contextmanager
-from itertools import chain
 
 from tabulate import tabulate
 
@@ -8,7 +7,6 @@ from learning.data_set.constructors import create_training_set_from_list, \
     create_explicit_mask_from_list, create_data_set_from_list
 from learning.learning_stages.learning_stages import BrainLearningMode
 from non_lazy_brain import NonLazyBrain
-
 
 HEADERS = ['input', 'same winners for 00', 'same winners for 01',
            'same winners for 10', 'same winners for 11', 'intersection',
@@ -124,7 +122,7 @@ class PrepWork:
 
     def run(self):
         # Training:
-        for data_point in chain(self._data_set, self._training_set, self._data_set):
+        for data_point in self._training_set:
             self._train(self._brain, data_point.input, data_point.output)
             same_winners, intersection = self._calculate_winners_and_intersection(data_point.input, 'C')
             self._update_data(self._training_results, data_point.input, same_winners, intersection, self._brain.output_areas['Output'].winners)
