@@ -1,9 +1,11 @@
 from collections import defaultdict
 from contextlib import contextmanager
+from functools import reduce
+from tqdm import tqdm
 from tabulate import tabulate
 
 from learning.data_set.constructors import create_training_set_from_list, \
-    create_explicit_mask_from_list, create_data_set_from_list
+    create_explicit_mask_from_list, create_data_set_from_list, create_data_set_from_callable
 from learning.learning_stages.learning_stages import BrainLearningMode
 from non_lazy_brain import NonLazyBrain
 
@@ -12,12 +14,18 @@ HEADERS = ['input', 'same winners (as last fire for the same input)', 'intersect
 
 
 class PrepWork:
-    def __init__(self, dimension) -> None:
+    def __init__(self, dimension, func_to_learn, training_set_size_func) -> None:
         super().__init__()
+        self._dimension = dimension
+        self._func_to_learn = func_to_learn
+        self.training_set_size_func = training_set_size_func
+
         self._brain = self._construct_brain(dimension)
-        self._outputs_list = [0, 1] * (2 ** (dimension - 1))
-        self._data_set = create_data_set_from_list(self._outputs_list)
-        self._training_set = self._create_training_set(self._outputs_list, dimension)
+        self._outputs_list = [func_to_learn(i) for i in range(2**dimension)]
+        self._data_set = create_data_set_from_callable(function=func_to_learn,
+                                                       domain_size=dimension,
+                                                       noise_probability=0)
+        self._training_set = self._create_training_set(self._outputs_list, dimension, training_set_size_func)
         self._training_results = [HEADERS]
         self._test_results = [HEADERS]
         self._intersections = []
@@ -70,9 +78,9 @@ class PrepWork:
         brain.learning_mode = BrainLearningMode.DEFAULT
 
     @staticmethod
-    def _create_training_set(outputs, dimension):
+    def _create_training_set(outputs, dimension, training_set_size_function):
         full_mask = create_explicit_mask_from_list([1] * len(outputs))
-        return create_training_set_from_list(outputs, full_mask, 40 * (dimension ** 0.5))
+        return create_training_set_from_list(outputs, full_mask, training_set_size_function(dimension))
 
     @staticmethod
     def _get_last_set(list_of_sets):
@@ -111,13 +119,15 @@ class PrepWork:
 
     def run(self):
         # Training:
-        for data_point in self._training_set:
+        print('------------ Training ------------')
+        for data_point in tqdm(self._training_set):
             self._train(self._brain, data_point.input, data_point.output)
             same_winners, intersection = self._calculate_winners_and_intersection(data_point.input, 'A')
             self._update_data(self._training_results, data_point.input, same_winners, intersection, self._brain.output_areas['Output'].winners)
 
         # Test:
-        for data_point in self._data_set:
+        print('------------ Testing ------------')
+        for data_point in tqdm(self._data_set):
             self._test(self._brain, data_point.input)
             self._test_output_winners[data_point.input] = self._brain.output_areas['Output'].winners
             same_winners, intersection = self._calculate_winners_and_intersection(data_point.input, 'A')
@@ -136,17 +146,63 @@ class PrepWork:
         return accuracy
 
 
-if __name__ == '__main__':
-    for dim in range(3, 10):
-        accuracy_list = []
-        print(f"Learning function of dimension {dim}...")
-        for run in range(6):
-            prep = PrepWork(dimension=dim)
-            accuracy_list.append(prep.run())
-            print('=' * 91)
-            print('\n')
+def parity_func(x):
+    return x % 2
 
-        print('=' * 91)
-        print("Average Accuracy:", round(sum(accuracy_list) / len(accuracy_list), 3))
-        print('=' * 91)
-        print('\n')
+
+def xor_bits_func(x):
+    return reduce(lambda d1, d2: d1 ^ d2, [int(d) for d in list(bin(x)[2:])])
+
+
+def log_training_set_funcs_generator(constants=(1, 5, 10, 20, 30)):
+    for constant in constants:
+        print(f'------ Yielding func: int({constant}*log(2^dim)) = int({constant}*dim) ------')
+        yield lambda dimension: int(constant * dimension)
+
+
+def fourth_root_training_set_funcs_generator(constants=(1, 5, 10, 20, 30)):
+    for constant in constants:
+        print(f'------ Yielding func: int({constant} * ((2**dim)**(1/4))) ------')
+        yield lambda dimension: int(constant * ((2**dimension)**(1/4)))
+
+
+def eighth_root_training_set_funcs_generator(constants=(10, 20, 30, 40, 50)):
+    for constant in constants:
+        print(f'------ Yielding func: int({constant} * ((2**dim)**(1/8))) ------')
+        yield lambda dimension: int(constant * ((2**dimension)**(1/8)))
+
+
+FUNCS_TO_LEARN = [(parity_func, 'parity'),
+                   (xor_bits_func, 'xor')]
+DIMS = list(range(1, 7))
+NUM_RUNS = 6
+TRAINING_SETS_SIZE_FUNC_GENERATORS = [log_training_set_funcs_generator,
+                                      fourth_root_training_set_funcs_generator,
+                                      eighth_root_training_set_funcs_generator]
+
+if __name__ == '__main__':
+    for dim in DIMS:
+        print(f"Learning function of dimension {dim}...")
+
+        for func_to_learn, func_description in FUNCS_TO_LEARN:
+            print(f'--- Learning function: {func_description} ---')
+
+            for training_set_size_func_generator in TRAINING_SETS_SIZE_FUNC_GENERATORS:
+                for training_set_size_func in training_set_size_func_generator():
+
+                    accuracy_list = []
+                    for run in range(NUM_RUNS):
+                        print(f"--------- Run #{run + 1 } out of {NUM_RUNS} ---------")
+
+                        prep = PrepWork(dimension=dim,
+                                        func_to_learn=func_to_learn,
+                                        training_set_size_func=training_set_size_func)
+                        accuracy_list.append(prep.run())
+                        print('=' * 91)
+                        print('\n')
+
+                    print('=' * 91)
+                    print(f'Actual accuracy results: {accuracy_list}')
+                    print("Average Accuracy:", round(sum(accuracy_list) / len(accuracy_list), 3))
+                    print('=' * 91)
+                    print('\n')

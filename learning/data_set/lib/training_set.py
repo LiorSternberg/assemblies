@@ -19,6 +19,7 @@ class TrainingSet(PartialDataSet):
     def __init__(self, base_data_set: DataSetBase, mask: Mask, length: int = None,
                  noise_probability: float = 0.) -> None:
         super().__init__(base_data_set, mask, noise_probability)
+        assert type(length) == int, f'TrainingSet length must be an integer (got {length} of type {type(length)})'
         self._length = length
         self._random = random.Random()
         self._shuffled_indices = self._get_training_indices()
