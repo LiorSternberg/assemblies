@@ -107,13 +107,13 @@ class LearningModel:
 
         self._sequence.initialize_run(number_of_cycles=number_of_sequence_cycles)
 
-        if desired_output:
+        if desired_output is not None:
             self.output_area.desired_output = [desired_output]
 
-        for iteration in self._sequence:
-            # Getting the projection parameters, after the removal of the nonactive stimuli
-            projection_parameters = iteration.format(active_stimuli)
-            with self._set_brain_mode(brain_mode=brain_mode):
+        with self._set_brain_mode(brain_mode=brain_mode):
+            for iteration in self._sequence:
+                # Getting the projection parameters, after the removal of the nonactive stimuli
+                projection_parameters = iteration.format(active_stimuli)
                 self._brain.project(**projection_parameters)
 
     def _convert_input_to_stimuli(self, input_number: int) -> List[str]:

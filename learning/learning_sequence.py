@@ -1,6 +1,7 @@
 from itertools import chain
 from typing import List, Union, Dict
-from networkx import DiGraph, has_path
+from networkx import DiGraph, has_path, draw
+import matplotlib.pyplot as plt
 
 from brain import Brain, Area, OutputArea
 from learning.errors import MissingStimulus, MissingArea, SequenceRunNotInitialized, NoPathException, \
@@ -132,14 +133,16 @@ class LearningSequence:
 
             for target_area in target_areas:
                 area_type = 'output' if isinstance(self._verify_and_get_area(target_area), OutputArea) else 'area'
-                self._connections_graph.add_edge(f'stimulus-{source_stimulus}', f'{area_type}-{target_area}')
+                self._connections_graph.add_edge(f'stimulus-{source_stimulus}', f'{area_type}-{target_area}',
+                                                 weight=consecutive_runs)
 
         for source_area, target_areas in areas_to_areas.items():
             self._verify_and_get_area(source_area)
 
             for target_area in target_areas:
                 area_type = 'output' if isinstance(self._verify_and_get_area(target_area), OutputArea) else 'area'
-                self._connections_graph.add_edge(f'area-{source_area}', f'{area_type}-{target_area}')
+                self._connections_graph.add_edge(f'area-{source_area}', f'{area_type}-{target_area}',
+                                                 weight=consecutive_runs)
 
         new_iteration = self.Iteration(stimuli_to_areas=stimuli_to_areas,
                                        areas_to_areas=areas_to_areas,
@@ -168,3 +171,10 @@ class LearningSequence:
         if len(output_areas) != 1:
             raise IllegalOutputAreasException(output_areas)
         return output_areas[0]
+
+    def display(self):
+        """
+        Displaying the sequence graph
+        """
+        draw(self._connections_graph, alpha=0.5, with_labels=True)
+        plt.show()

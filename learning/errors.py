@@ -43,7 +43,7 @@ class DomainSizeMismatch(ValuesMismatch):
 
     def __str__(self) -> str:
         return f"The domain size of {self._actual_object} is expected to be the same as the domain size of " \
-               f"{self._expected_object} (i.e. {self._expected_value}), but instead it's of size {self._actual_value}"
+               f"{self._expected_object} ({self._expected_value}), but instead it's of size {self._actual_value}"
 
 
 class StimuliMismatch(ValuesMismatch):
