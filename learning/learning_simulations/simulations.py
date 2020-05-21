@@ -23,6 +23,7 @@ def _create_model(strategy: Strategy,
     brain = simulation_utils.create_brain(n=10000, k=100, p=0.01, beta=0.05)
 
     sequence = simulation_utils.create_sequence(brain)
+    sequence.display()
     training_set = simulation_utils.create_training_set(output_values_or_function, training_set_size_function, noise)
 
     learning = Learning(brain, domain_size=domain_size)

@@ -1,6 +1,6 @@
 from itertools import chain
 from typing import List, Union, Dict
-from networkx import DiGraph, has_path, draw
+from networkx import DiGraph, has_path, draw, draw_networkx_edge_labels, get_node_attributes, get_edge_attributes
 import matplotlib.pyplot as plt
 
 from brain import Brain, Area, OutputArea
@@ -131,23 +131,53 @@ class LearningSequence:
         for source_stimulus, target_areas in stimuli_to_areas.items():
             self._verify_stimulus(source_stimulus)
 
+            stimulus_node = f'stimulus-{source_stimulus}'
+
             for target_area in target_areas:
                 area_type = 'output' if isinstance(self._verify_and_get_area(target_area), OutputArea) else 'area'
-                self._connections_graph.add_edge(f'stimulus-{source_stimulus}', f'{area_type}-{target_area}',
-                                                 weight=consecutive_runs)
+                area_node = f'{area_type}-{target_area}'
+
+                self._add_edge(stimulus_node, area_node, consecutive_runs)
 
         for source_area, target_areas in areas_to_areas.items():
             self._verify_and_get_area(source_area)
 
+            source_area_node = f'area-{source_area}'
+
             for target_area in target_areas:
                 area_type = 'output' if isinstance(self._verify_and_get_area(target_area), OutputArea) else 'area'
-                self._connections_graph.add_edge(f'area-{source_area}', f'{area_type}-{target_area}',
-                                                 weight=consecutive_runs)
+                target_area_node = f'{area_type}-{target_area}'
+
+                self._add_edge(source_area_node, target_area_node, consecutive_runs)
 
         new_iteration = self.Iteration(stimuli_to_areas=stimuli_to_areas,
                                        areas_to_areas=areas_to_areas,
                                        consecutive_runs=consecutive_runs)
         self._iterations.append(new_iteration)
+
+    def _add_edge(self, source_node, target_node, weight):
+        """
+        Adding an edge to the sequence Graph
+        """
+        existing_horizontal_positions = max([position[1] for position in get_node_attributes(
+            self._connections_graph, 'position').values()]) if self._connections_graph.nodes else 0
+        horizontal_index = min(len(self._iterations), existing_horizontal_positions)
+
+        if not self._connections_graph.has_node(source_node):
+            vertical_index = len([position for position in get_node_attributes(
+                self._connections_graph, 'position').values() if position[1] == horizontal_index])
+            self._connections_graph.add_node(source_node, position=(vertical_index, horizontal_index))
+
+        if not self._connections_graph.has_node(target_node):
+            vertical_index = len([position for position in get_node_attributes(
+                self._connections_graph, 'position').values() if position[1] == horizontal_index + 1])
+            self._connections_graph.add_node(target_node, position=(vertical_index, horizontal_index + 1))
+
+        if self._connections_graph.has_edge(source_node, target_node):
+            # Adding to the previous edge weight
+            weight += self._connections_graph.get_edge_data(source_node, target_node)['weight']
+
+        self._connections_graph.add_edge(source_node, target_node, weight=weight)
 
     def _verify_stimuli_are_connected_to_output(self):
         """
@@ -176,5 +206,8 @@ class LearningSequence:
         """
         Displaying the sequence graph
         """
-        draw(self._connections_graph, alpha=0.5, with_labels=True)
+        node_positions = get_node_attributes(self._connections_graph, 'position')
+        edge_labels = get_edge_attributes(self._connections_graph, 'weight')
+        draw(self._connections_graph, pos=node_positions, alpha=1, with_labels=True)
+        draw_networkx_edge_labels(self._connections_graph, node_positions, edge_labels=edge_labels)
         plt.show()
