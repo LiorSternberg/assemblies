@@ -80,7 +80,7 @@ class TestProject(LazyBrainTestBase):
         origin_area = self.utils.area0
         output_area = self.utils.output_area
 
-        brain.learning_mode = BrainLearningMode.TESTING
+        brain.learning_mode = BrainLearningMode.PLASTICITY_OFF
         brain.project(area_to_area={origin_area.name: [output_area.name]}, stim_to_area={})
         connectome_after_projection = brain.output_connectomes[origin_area.name][output_area.name]
         self.assertAlmostEqual(1, get_matrix_max(connectome_after_projection))
@@ -95,7 +95,7 @@ class TestProject(LazyBrainTestBase):
             origin_area = self.utils.area0
             output_area = self.utils.output_area
 
-            brain.learning_mode = BrainLearningMode.TRAINING
+            brain.learning_mode = BrainLearningMode.FORCE_DESIRED_OUTPUT
             output_area.desired_output = [1]
             brain.project(area_to_area={origin_area.name: [output_area.name]}, stim_to_area={})
             connectome_after_projection = brain.output_connectomes[origin_area.name][output_area.name]

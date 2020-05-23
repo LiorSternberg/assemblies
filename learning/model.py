@@ -51,7 +51,7 @@ class LearningModel:
 
         for data_point in training_set:
             self._run_learning_projection(input_number=data_point.input,
-                                          brain_mode=BrainLearningMode.TRAINING,
+                                          brain_mode=BrainLearningMode.FORCE_DESIRED_OUTPUT,
                                           desired_output=data_point.output,
                                           number_of_sequence_cycles=number_of_sequence_cycles)
 
@@ -88,7 +88,7 @@ class LearningModel:
         """
         self._validate_input_number(input_number)
 
-        self._run_learning_projection(input_number, brain_mode=BrainLearningMode.TESTING)
+        self._run_learning_projection(input_number, brain_mode=BrainLearningMode.PLASTICITY_OFF)
         return self.output_area.winners[0]
 
     def _run_learning_projection(self, input_number: int, brain_mode: BrainLearningMode, desired_output=None,

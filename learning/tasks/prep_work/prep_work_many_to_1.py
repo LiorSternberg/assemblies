@@ -66,10 +66,10 @@ class PrepWork:
 
     def _train(self, brain: NonLazyBrain, input_value, output_value):
         brain.output_areas['Output'].desired_output = [output_value]
-        self._fire(brain, input_value, BrainLearningMode.TRAINING)
+        self._fire(brain, input_value, BrainLearningMode.FORCE_DESIRED_OUTPUT)
 
     def _test(self, brain: NonLazyBrain, input_value):
-        self._fire(brain, input_value, BrainLearningMode.TESTING)
+        self._fire(brain, input_value, BrainLearningMode.PLASTICITY_OFF)
 
     @contextmanager
     def _set_learning_mode(self, brain, brain_mode):
