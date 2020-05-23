@@ -1,5 +1,5 @@
 from brain import OutputArea
-from learning.learning_stages.learning_stages import BrainLearningMode
+from learning.brain_modes import BrainLearningMode
 from tests.test_lazy_brain.lazy_brain_test_base import LazyBrainTestBase
 from utils import get_matrix_max, get_matrix_min
 

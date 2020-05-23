@@ -1,11 +1,11 @@
 from brain import Brain
 from learning.data_set.lib.training_set import TrainingSet
 from learning.errors import ItemNotInitialized
-from learning.learning_sequence import LearningSequence
-from learning.learning_model import LearningModel
+from learning.sequence import LearningSequence
+from learning.model import LearningModel
 
 
-class Learning:
+class LearningTask:
 
     def __init__(self, brain: Brain, domain_size: int):
         self.brain = brain

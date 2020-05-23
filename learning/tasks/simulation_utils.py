@@ -6,8 +6,8 @@ from brain import Brain
 from learning.data_set.constructors import create_explicit_mask_from_list, create_training_set_from_list, \
     create_data_set_from_list
 from learning.data_set.data_set import DataSet
-from learning.learning_sequence import LearningSequence
-from learning.learning_simulations import Strategy
+from learning.sequence import LearningSequence
+from learning.tasks.strategy import Strategy
 from non_lazy_brain import NonLazyBrain
 
 

@@ -5,7 +5,7 @@ import numpy as np
 import heapq
 from numpy.core._multiarray_umath import ndarray
 
-from learning.learning_stages.learning_stages import BrainLearningMode
+from learning.brain_modes import BrainLearningMode
 
 
 class NonLazyBrain(Brain):

@@ -23,7 +23,7 @@ from typing import List, Mapping, Dict
 from collections import defaultdict
 from numpy.core._multiarray_umath import ndarray
 
-from learning.learning_stages.learning_stages import BrainLearningMode
+from learning.brain_modes import BrainLearningMode
 
 
 class Stimulus:

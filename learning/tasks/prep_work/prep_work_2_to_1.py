@@ -1,23 +1,25 @@
 from collections import defaultdict
 from contextlib import contextmanager
+
 from tabulate import tabulate
 
 from learning.data_set.constructors import create_training_set_from_list, \
     create_explicit_mask_from_list, create_data_set_from_list
-from learning.learning_stages.learning_stages import BrainLearningMode
+from learning.brain_modes import BrainLearningMode
 from non_lazy_brain import NonLazyBrain
 
-
-HEADERS = ['input', 'same winners for 0', 'same winners for 1', 'intersection', 'output winners', 'noisy?']
+HEADERS = ['input', 'same winners for 00', 'same winners for 01',
+           'same winners for 10', 'same winners for 11', 'intersection',
+           'output winners']
 
 
 class PrepWork:
-    def __init__(self, noise_probability) -> None:
+    def __init__(self) -> None:
         super().__init__()
         self._brain = self._construct_brain()
-        self._outputs_list = [0, 1]
+        self._outputs_list = [0, 1, 0, 1]
         self._data_set = create_data_set_from_list(self._outputs_list)
-        self._training_set = self._create_training_set(self._outputs_list, noise_probability)
+        self._training_set = self._create_training_set(self._outputs_list)
         self._training_results = [HEADERS]
         self._test_results = [HEADERS]
         self._intersections = []
@@ -30,28 +32,46 @@ class PrepWork:
         k = 100
         brain = NonLazyBrain(p=0.01)
         brain.add_area('A', n, k, beta=0.05)
+        brain.add_area('B', n, k, beta=0.05)
+        brain.add_area('C', n, k, beta=0.05)
         brain.add_stimulus('s0', k)
         brain.add_stimulus('s1', k)
         brain.add_output_area('Output')
         return brain
 
-    def _fire(self, brain: NonLazyBrain, stimulus_number, brain_mode):
-        brain.project(stim_to_area={f's{stimulus_number}': ['A']},
+    def _split_to_bits(self, input_value):
+        return tuple(int(bit) for bit in self._binary(input_value))
+
+    def _binary(self, input_value):
+        return bin(input_value)[2:].zfill(self._data_set.domain_size)
+
+    def _fire(self, brain: NonLazyBrain, input_value, brain_mode):
+        stimuli = self._split_to_bits(input_value)
+        brain.project(stim_to_area={f's{stimuli[0]}': ['A'],
+                                    f's{stimuli[1]}': ['B']},
                       area_to_area={})
 
         for iteration in range(2):
-            brain.project(stim_to_area={f's{stimulus_number}': ['A']},
-                          area_to_area={'A': ['A']})
+            brain.project(stim_to_area={f's{stimuli[0]}': ['A'],
+                                        f's{stimuli[1]}': ['B']},
+                          area_to_area={'A': ['A'], 'B': ['B']})
+
+        brain.project(stim_to_area={},
+                      area_to_area={'A': ['C'], 'B': ['C']})
+
+        for iteration in range(2):
+            brain.project(stim_to_area={},
+                          area_to_area={'A': ['C'], 'B': ['C'], 'C': ['C']})
 
         with self._set_learning_mode(brain, brain_mode):
-            brain.project(stim_to_area={}, area_to_area={'A': ['Output']})
+            brain.project(stim_to_area={}, area_to_area={'C': ['Output']})
 
-    def _train(self, brain: NonLazyBrain, stimulus_number, output):
-        brain.output_areas['Output'].desired_output = [output]
-        self._fire(brain, stimulus_number, BrainLearningMode.TRAINING)
+    def _train(self, brain: NonLazyBrain, input_value, output_value):
+        brain.output_areas['Output'].desired_output = [output_value]
+        self._fire(brain, input_value, BrainLearningMode.TRAINING)
 
-    def _test(self, brain: NonLazyBrain, stimulus_number):
-        self._fire(brain, stimulus_number, BrainLearningMode.TESTING)
+    def _test(self, brain: NonLazyBrain, input_value):
+        self._fire(brain, input_value, BrainLearningMode.TESTING)
 
     @contextmanager
     def _set_learning_mode(self, brain, brain_mode):
@@ -60,17 +80,16 @@ class PrepWork:
         brain.learning_mode = BrainLearningMode.DEFAULT
 
     @staticmethod
-    def _create_training_set(outputs, noise_probability):
+    def _create_training_set(outputs):
         full_mask = create_explicit_mask_from_list([1] * len(outputs))
-        return create_training_set_from_list(outputs, full_mask, 50, noise_probability)
+        return create_training_set_from_list(outputs, full_mask, 100)
 
     @staticmethod
     def _get_last_set(list_of_sets):
         return list_of_sets[-1] if list_of_sets else set()
 
-    def _update_data(self, data_table, input_value, same_winners, intersection, output, expected_output):
-        row = [str(input_value)] + ['-'] * len(self._outputs_list) + \
-              [str(len(intersection)), str(output), '+' if output[0] != expected_output else '']
+    def _update_data(self, data_table, input_value, same_winners, intersection, output):
+        row = [self._binary(input_value)] + ['-'] * len(self._outputs_list) + [str(len(intersection)), str(output)]
         row[input_value + 1] = str(len(same_winners))
         data_table.append(row)
 
@@ -105,40 +124,30 @@ class PrepWork:
         # Training:
         for data_point in self._training_set:
             self._train(self._brain, data_point.input, data_point.output)
-            same_winners, intersection = self._calculate_winners_and_intersection(data_point.input, 'A')
-            self._update_data(self._training_results, data_point.input, same_winners, intersection, self._brain.output_areas['Output'].winners, self._outputs_list[data_point.input])
+            same_winners, intersection = self._calculate_winners_and_intersection(data_point.input, 'C')
+            self._update_data(self._training_results, data_point.input, same_winners, intersection, self._brain.output_areas['Output'].winners)
 
         # Test:
         for data_point in self._data_set:
             self._test(self._brain, data_point.input)
             self._test_output_winners[data_point.input] = self._brain.output_areas['Output'].winners
-            same_winners, intersection = self._calculate_winners_and_intersection(data_point.input, 'A')
-            self._update_data(self._test_results, data_point.input, same_winners, intersection, self._brain.output_areas['Output'].winners, data_point.output)
+            same_winners, intersection = self._calculate_winners_and_intersection(data_point.input, 'C')
+            self._update_data(self._test_results, data_point.input, same_winners, intersection, self._brain.output_areas['Output'].winners)
 
         print("Training:")
-        print('-' * 95)
+        print('-' * 133)
         print(tabulate(self._training_results, headers="firstrow", numalign='left', stralign='left'))
-        print('-' * 95)
+        print('-' * 133)
         print("Test:")
-        print('-' * 95)
+        print('-' * 133)
         print(tabulate(self._test_results, headers="firstrow", numalign='left', stralign='left'))
-        print('-' * 95)
-        accuracy = self._calculate_accuracy()
-        print("Accuracy:", accuracy)
-        return accuracy
-
+        print('-' * 133)
+        print("Accuracy:", self._calculate_accuracy())
+        
 
 if __name__ == '__main__':
-    for p in (0.1, 0.2, 0.25, 0.3, 0.35, 0.4, 0.425, 0.45):
-        accuracy_list = []
-        print(f"Adding noise with probability {p}...")
-        for run in range(20):
-            prep = PrepWork(noise_probability=p)
-            accuracy_list.append(prep.run())
-            print('=' * 95)
-            print('\n')
-
-        print('=' * 95)
-        print("Average Accuracy:", round(sum(accuracy_list) / len(accuracy_list), 3))
-        print('=' * 95)
+    for _ in range(10):
+        prep = PrepWork()
+        prep.run()
+        print('=' * 133)
         print('\n')

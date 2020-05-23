@@ -5,8 +5,8 @@ from tqdm import tqdm
 from tabulate import tabulate
 
 from learning.data_set.constructors import create_training_set_from_list, \
-    create_explicit_mask_from_list, create_data_set_from_list, create_data_set_from_callable
-from learning.learning_stages.learning_stages import BrainLearningMode
+    create_explicit_mask_from_list, create_data_set_from_callable
+from learning.brain_modes import BrainLearningMode
 from non_lazy_brain import NonLazyBrain
 
 

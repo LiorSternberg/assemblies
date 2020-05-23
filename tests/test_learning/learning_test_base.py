@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from learning.learning_sequence import LearningSequence
+from learning.sequence import LearningSequence
 from tests.brain_test_utils import BrainTestUtils
 
 

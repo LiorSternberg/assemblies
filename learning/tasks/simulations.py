@@ -1,9 +1,9 @@
 from collections import namedtuple
 from typing import List, Callable, Union
 
-from learning.learning_simulations import Strategy
-from learning.learning_simulations.simulation_utils import SimulationUtilsFactory
-from learning.learning_task import Learning
+from learning.tasks.strategy import Strategy
+from learning.tasks.simulation_utils import SimulationUtilsFactory
+from learning.task import LearningTask
 
 
 TrainedModel = namedtuple('Model', ['model', 'test_set'])
@@ -26,7 +26,7 @@ def _create_model(strategy: Strategy,
     sequence.display()
     training_set = simulation_utils.create_training_set(output_values_or_function, training_set_size_function, noise)
 
-    learning = Learning(brain, domain_size=domain_size)
+    learning = LearningTask(brain, domain_size=domain_size)
     learning.sequence = sequence
     learning.training_set = training_set
 

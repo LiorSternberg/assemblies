@@ -10,7 +10,7 @@ from scipy.stats import truncnorm
 import math
 import random
 
-from learning.learning_stages.learning_stages import BrainLearningMode
+from learning.brain_modes import BrainLearningMode
 
 
 class LazyBrain(Brain):

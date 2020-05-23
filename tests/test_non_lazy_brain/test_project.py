@@ -1,7 +1,7 @@
 from unittest import skip
 
 from brain import OutputArea
-from learning.learning_stages.learning_stages import BrainLearningMode
+from learning.brain_modes import BrainLearningMode
 from tests.test_non_lazy_brain.non_lazy_brain_test_base import NonLazyBrainTestBase
 from utils import get_matrix_max, get_matrix_min
 

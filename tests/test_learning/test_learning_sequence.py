@@ -3,7 +3,7 @@ from unittest import TestCase
 from parameterized import parameterized
 
 from learning.errors import SequenceRunNotInitialized, IllegalOutputAreasException, NoPathException
-from learning.learning_sequence import LearningSequence
+from learning.sequence import LearningSequence
 from tests.brain_test_utils import BrainTestUtils
 
 

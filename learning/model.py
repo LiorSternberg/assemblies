@@ -6,9 +6,9 @@ from typing import List
 from brain import Brain, OutputArea
 from learning.data_set.data_set import DataSet
 from learning.errors import DomainSizeMismatch, StimuliMismatch
-from learning.learning_configurations import LearningConfigurations
-from learning.learning_sequence import LearningSequence
-from learning.learning_stages.learning_stages import BrainLearningMode
+from learning.configurations import LearningConfigurations
+from learning.sequence import LearningSequence
+from learning.brain_modes import BrainLearningMode
 
 TestResults = namedtuple('TestResults', ['accuracy',
                                          'true_positive',

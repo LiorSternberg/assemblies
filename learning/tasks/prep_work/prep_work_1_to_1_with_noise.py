@@ -4,20 +4,20 @@ from tabulate import tabulate
 
 from learning.data_set.constructors import create_training_set_from_list, \
     create_explicit_mask_from_list, create_data_set_from_list
-from learning.learning_stages.learning_stages import BrainLearningMode
+from learning.brain_modes import BrainLearningMode
 from non_lazy_brain import NonLazyBrain
 
 
-HEADERS = ['input', 'same winners for 0', 'same winners for 1', 'intersection', 'output winners']
+HEADERS = ['input', 'same winners for 0', 'same winners for 1', 'intersection', 'output winners', 'noisy?']
 
 
 class PrepWork:
-    def __init__(self) -> None:
+    def __init__(self, noise_probability) -> None:
         super().__init__()
         self._brain = self._construct_brain()
         self._outputs_list = [0, 1]
         self._data_set = create_data_set_from_list(self._outputs_list)
-        self._training_set = self._create_training_set(self._outputs_list)
+        self._training_set = self._create_training_set(self._outputs_list, noise_probability)
         self._training_results = [HEADERS]
         self._test_results = [HEADERS]
         self._intersections = []
@@ -60,16 +60,17 @@ class PrepWork:
         brain.learning_mode = BrainLearningMode.DEFAULT
 
     @staticmethod
-    def _create_training_set(outputs):
+    def _create_training_set(outputs, noise_probability):
         full_mask = create_explicit_mask_from_list([1] * len(outputs))
-        return create_training_set_from_list(outputs, full_mask, 50)
+        return create_training_set_from_list(outputs, full_mask, 50, noise_probability)
 
     @staticmethod
     def _get_last_set(list_of_sets):
         return list_of_sets[-1] if list_of_sets else set()
 
-    def _update_data(self, data_table, input_value, same_winners, intersection, output):
-        row = [str(input_value)] + ['-'] * len(self._outputs_list) + [str(len(intersection)), str(output)]
+    def _update_data(self, data_table, input_value, same_winners, intersection, output, expected_output):
+        row = [str(input_value)] + ['-'] * len(self._outputs_list) + \
+              [str(len(intersection)), str(output), '+' if output[0] != expected_output else '']
         row[input_value + 1] = str(len(same_winners))
         data_table.append(row)
 
@@ -105,29 +106,39 @@ class PrepWork:
         for data_point in self._training_set:
             self._train(self._brain, data_point.input, data_point.output)
             same_winners, intersection = self._calculate_winners_and_intersection(data_point.input, 'A')
-            self._update_data(self._training_results, data_point.input, same_winners, intersection, self._brain.output_areas['Output'].winners)
+            self._update_data(self._training_results, data_point.input, same_winners, intersection, self._brain.output_areas['Output'].winners, self._outputs_list[data_point.input])
 
         # Test:
         for data_point in self._data_set:
             self._test(self._brain, data_point.input)
             self._test_output_winners[data_point.input] = self._brain.output_areas['Output'].winners
             same_winners, intersection = self._calculate_winners_and_intersection(data_point.input, 'A')
-            self._update_data(self._test_results, data_point.input, same_winners, intersection, self._brain.output_areas['Output'].winners)
+            self._update_data(self._test_results, data_point.input, same_winners, intersection, self._brain.output_areas['Output'].winners, data_point.output)
 
         print("Training:")
-        print('-' * 85)
+        print('-' * 95)
         print(tabulate(self._training_results, headers="firstrow", numalign='left', stralign='left'))
-        print('-' * 85)
+        print('-' * 95)
         print("Test:")
-        print('-' * 85)
+        print('-' * 95)
         print(tabulate(self._test_results, headers="firstrow", numalign='left', stralign='left'))
-        print('-' * 85)
-        print("Accuracy:", self._calculate_accuracy())
+        print('-' * 95)
+        accuracy = self._calculate_accuracy()
+        print("Accuracy:", accuracy)
+        return accuracy
 
 
 if __name__ == '__main__':
-    for _ in range(10):
-        prep = PrepWork()
-        prep.run()
-        print('=' * 85)
+    for p in (0.1, 0.2, 0.25, 0.3, 0.35, 0.4, 0.425, 0.45):
+        accuracy_list = []
+        print(f"Adding noise with probability {p}...")
+        for run in range(20):
+            prep = PrepWork(noise_probability=p)
+            accuracy_list.append(prep.run())
+            print('=' * 95)
+            print('\n')
+
+        print('=' * 95)
+        print("Average Accuracy:", round(sum(accuracy_list) / len(accuracy_list), 3))
+        print('=' * 95)
         print('\n')
