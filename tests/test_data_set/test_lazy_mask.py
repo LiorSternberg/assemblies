@@ -2,7 +2,7 @@ from math import sqrt
 from random import shuffle
 from unittest import TestCase
 
-from learning.data_set.constructors import create_lazy_mask
+from learning.components.data_set import create_lazy_mask
 
 
 class TestLazyMask(TestCase):

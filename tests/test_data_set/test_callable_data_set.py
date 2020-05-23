@@ -1,7 +1,7 @@
 from unittest import TestCase
 
-from learning.data_set.constructors import create_data_set_from_callable
-from learning.data_set.errors import DataSetValueError, InvalidFunctionError
+from learning.components.data_set import create_data_set_from_callable
+from learning.components.data_set import DataSetValueError, InvalidFunctionError
 
 
 class TestCallableDataSet(TestCase):

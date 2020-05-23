@@ -1,8 +1,8 @@
 from unittest import TestCase
 
-from learning.data_set.constructors import create_training_set_from_callable, \
+from learning.components.data_set import create_training_set_from_callable, \
     create_explicit_mask_from_list
-from learning.data_set.data_point import DataPoint
+from learning.components.data_set import DataPoint
 
 
 class TestTrainingSet(TestCase):
