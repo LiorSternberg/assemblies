@@ -53,8 +53,55 @@ class InputBitStimuli:
 
 
 class InputStimuli:
+    """
+    An object representing a the mapping between input bits and their pair of stimuli.
+    Each pair of stimuli is also associated with a set of brain areas that these stimuli can fire
+    to (and only to this set).
+    The definition of a new InputStimuli creates auto-generated stimuli where needed, or uses
+    the provided override stimuli.
+    Note that is a limit of how many auto-generated stimuli the InputStimuli will try to create
+    in a given brain before reaching a max attempt limit if all the names it attempted to use were
+    already in use. This limit can be changed if needed.
+    """
     def __init__(self, brain: Brain, stimulus_k: int, *area_names: Union[str, List[str]],
                  override: Dict[int, Tuple[str, str]] = None, verbose=True) -> None:
+        """
+        :param brain: the brain to create the input stimuli in.
+        :param stimulus_k: the number of firing neurons of an auto-generated input stimulus.
+        :param area_names: the target area names to associate the stimuli pairs to. can be a string (the name of a
+        single brain area) or a list of names.
+        :param override: an optional override dictionary of bits to their existing stimuli pair to use instead of an
+        auto-generated pair of stimuli.
+        :param verbose: if True, prints the created InputStimuli object. True by default.
+
+        Examples:
+            input_stimuli = InputStimuli(brain, k, 'A', 'B', 'C')
+
+            <InputStimuli(length=3, bits_mapping_to_stimuli={
+                0: (__s_A_0, __s_A_1) -> ['A'],
+                1: (__s_B_0, __s_B_1) -> ['B'],
+                2: (__s_C_0, __s_C_1) -> ['C']
+            })>
+
+            input_stimuli = InputStimuli(brain, k, 'A', 'B', ['A', 'B'], override={1: ('s0', 's1')})
+
+            <InputStimuli(length=3, bits_mapping_to_stimuli={
+                0: (__s_A_0, __s_A_1) -> ['A'],
+                1: (s0, s1) -> ['B'],
+                2: (__s_A_B_0, __s_A_B_1) -> ['A', 'B']
+            })>
+
+            input_stimuli = InputStimuli(brain, k, 'A', 'B', ['A', 'B'], 'C', ['A', 'C'], ['A', 'B', 'C'])
+
+            <InputStimuli(length=6, bits_mapping_to_stimuli={
+                0: (__s_A_0, __s_A_1) -> ['A'],
+                1: (__s_B_0, __s_B_1) -> ['B'],
+                2: (__s_A_B_0, __s_A_B_1) -> ['A', 'B'],
+                3: (__s_C_0, __s_C_1) -> ['C'],
+                4: (__s_A_C_0, __s_A_C_1) -> ['A', 'C'],
+                5: (__s_A_B_C_0, __s_A_B_C_1) -> ['A', 'B', 'C']
+            })>
+        """
         super().__init__()
         self._input_bits: List[InputBitStimuli] = self._generate_input_bits(brain, stimulus_k, area_names, override)
         if verbose:
