@@ -1,3 +1,4 @@
+from collections import defaultdict
 from copy import deepcopy
 from itertools import chain
 from typing import List, Union, Dict, Tuple
@@ -34,16 +35,16 @@ class LearningSequence:
             :param input_value: the input value as a base 10 integer (for example, for the input 101, use 5).
             """
             input_value = self._to_bits(input_value, len(input_stimuli))
-            stimuli_to_area = deepcopy(self.stimuli_to_areas)
+            stimuli_to_area = defaultdict(list, deepcopy(self.stimuli_to_areas))
             for bit_index, area_names in self.input_bits_to_areas.items():
                 if sorted(input_stimuli[bit_index].target_areas) != sorted(area_names):
                     raise InputStimuliMisused(bit_index, input_stimuli[bit_index].target_areas, area_names)
 
                 bit_value = input_value[bit_index]
                 stimulus_name = input_stimuli[bit_index][bit_value]
-                stimuli_to_area[stimulus_name] = area_names
+                stimuli_to_area[stimulus_name] += area_names
 
-            return dict(stim_to_area=stimuli_to_area,
+            return dict(stim_to_area=dict(stimuli_to_area),
                         area_to_area=self.areas_to_areas)
 
     class IterationConfiguration:

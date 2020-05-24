@@ -228,6 +228,186 @@ class TestLearningSequence(TestCase):
         for idx, iteration in enumerate(sequence):
             self.assertEqual(expected_iterations[idx], iteration.format(input_stimuli, 0))
 
+    def test_sequence_with_only_input_bits(self):
+        input_stimuli = InputStimuli(self.brain, 100, 'A', 'B', verbose=False)
+        sequence = LearningSequence(self.brain)
+        sequence.add_iteration(input_bits_to_areas={0: ['A'], 1: ['B']})
+        sequence.add_iteration(areas_to_areas={'A': ['C'], 'B': ['C']})
+        sequence.add_iteration(areas_to_areas={'C': ['output']})
+
+        expected_iterations = [
+            {
+                'stim_to_area':
+                    {
+                        input_stimuli[0][0]: ['A'],
+                        input_stimuli[1][0]: ['B']
+                    },
+                'area_to_area': {}
+            },
+
+            {
+                'stim_to_area': {},
+                'area_to_area':
+                    {
+                        'A': ['C'],
+                        'B': ['C']
+                    }
+            },
+
+            {
+                'stim_to_area': {},
+                'area_to_area':
+                    {
+                        'C': ['output'],
+                    }
+            },
+        ]
+
+        sequence.initialize_run(number_of_cycles=1)
+        for idx, iteration in enumerate(sequence):
+            self.assertEqual(expected_iterations[idx], iteration.format(input_stimuli, 0))
+
+    def test_sequence_with_input_bits_and_stimuli_combines_the_dicts(self):
+        input_stimuli = InputStimuli(self.brain, 100, 'A', 'B', verbose=True, override={0: ('A', 'C')})
+        sequence = LearningSequence(self.brain)
+        sequence.add_iteration(input_bits_to_areas={0: ['A'], 1: ['B']}, stimuli_to_areas={'A': ['B'], 'B': ['C']})
+        sequence.add_iteration(areas_to_areas={'A': ['C'], 'B': ['C']})
+        sequence.add_iteration(areas_to_areas={'C': ['output']})
+
+        expected_iterations_00 = [
+            {
+                'stim_to_area':
+                    {
+                        'A': ['B', 'A'],
+                        input_stimuli[1][0]: ['B'],
+                        'B': ['C']
+                    },
+                'area_to_area': {}
+            },
+
+            {
+                'stim_to_area': {},
+                'area_to_area':
+                    {
+                        'A': ['C'],
+                        'B': ['C']
+                    }
+            },
+
+            {
+                'stim_to_area': {},
+                'area_to_area':
+                    {
+                        'C': ['output'],
+                    }
+            },
+        ]
+
+        expected_iterations_01 = [
+            {
+                'stim_to_area':
+                    {
+                        'A': ['B', 'A'],
+                        input_stimuli[1][1]: ['B'],
+                        'B': ['C']
+                    },
+                'area_to_area': {}
+            },
+
+            {
+                'stim_to_area': {},
+                'area_to_area':
+                    {
+                        'A': ['C'],
+                        'B': ['C']
+                    }
+            },
+
+            {
+                'stim_to_area': {},
+                'area_to_area':
+                    {
+                        'C': ['output'],
+                    }
+            },
+        ]
+
+        expected_iterations_10 = [
+            {
+                'stim_to_area':
+                    {
+                        'C': ['A'],
+                        input_stimuli[1][0]: ['B'],
+                        'A': ['B'],
+                        'B': ['C'],
+                    },
+                'area_to_area': {}
+            },
+
+            {
+                'stim_to_area': {},
+                'area_to_area':
+                    {
+                        'A': ['C'],
+                        'B': ['C']
+                    }
+            },
+
+            {
+                'stim_to_area': {},
+                'area_to_area':
+                    {
+                        'C': ['output'],
+                    }
+            },
+        ]
+
+        expected_iterations_11 = [
+            {
+                'stim_to_area':
+                    {
+                        'C': ['A'],
+                        input_stimuli[1][1]: ['B'],
+                        'A': ['B'],
+                        'B': ['C'],
+                    },
+                'area_to_area': {}
+            },
+
+            {
+                'stim_to_area': {},
+                'area_to_area':
+                    {
+                        'A': ['C'],
+                        'B': ['C']
+                    }
+            },
+
+            {
+                'stim_to_area': {},
+                'area_to_area':
+                    {
+                        'C': ['output'],
+                    }
+            },
+        ]
+
+        sequence.initialize_run(number_of_cycles=1)
+        for idx, iteration in enumerate(sequence):
+            self.assertDictEqual(expected_iterations_00[idx], iteration.format(input_stimuli, 0))
+
+        sequence.initialize_run(number_of_cycles=1)
+        for idx, iteration in enumerate(sequence):
+            self.assertDictEqual(expected_iterations_01[idx], iteration.format(input_stimuli, 1))
+
+        sequence.initialize_run(number_of_cycles=1)
+        for idx, iteration in enumerate(sequence):
+            self.assertDictEqual(expected_iterations_10[idx], iteration.format(input_stimuli, 2))
+
+        sequence.initialize_run(number_of_cycles=1)
+        for idx, iteration in enumerate(sequence):
+            self.assertDictEqual(expected_iterations_11[idx], iteration.format(input_stimuli, 3))
+
     def test_sequence_with_bad_input_bits_mapping(self):
         input_stimuli = InputStimuli(self.brain, 100, 'A', 'B', verbose=False)
         sequence = LearningSequence(self.brain)
