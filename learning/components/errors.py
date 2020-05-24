@@ -29,29 +29,37 @@ class SequenceRunNotInitialized(Exception):
         return f"The learning sequence instance must be reset before starting to iterate over it"
 
 
-class ValuesMismatch(Exception):
-    def __init__(self, expected_value, actual_value):
-        self._expected_value = expected_value
-        self._actual_value = actual_value
-
-
-class DomainSizeMismatch(ValuesMismatch):
+class DomainSizeMismatch(Exception):
     def __init__(self, expected_object, actual_object, expected_size: int, actual_size: int) -> None:
-        super().__init__(expected_size, actual_size)
         self._expected_object = expected_object
         self._actual_object = actual_object
+        self._expected_size = expected_size
+        self._actual_size = actual_size
 
     def __str__(self) -> str:
         return f"The domain size of {self._actual_object} is expected to be the same as the domain size of " \
-               f"{self._expected_object} ({self._expected_value}), but instead it's of size {self._actual_value}"
+               f"{self._expected_object} ({self._expected_size}), but instead it's of size {self._actual_size}"
 
 
-class StimuliMismatch(ValuesMismatch):
-    def __init__(self, expected_stimuli, actual_stimuli) -> None:
-        super().__init__(expected_stimuli, actual_stimuli)
-        
+class InputStimuliAndSequenceMismatch(Exception):
+    def __init__(self, input_expected_length, input_bit_index) -> None:
+        self._input_expected_length = input_expected_length
+        self._input_bit_index = input_bit_index
+
     def __str__(self) -> str:
-        return f"Number of stimuli should be {self._expected_value}. Instead, it's {self._actual_value}"
+        return f"Can't use a sequence which includes input bit {self._input_bit_index} when the input stimuli object " \
+               f"is defined for inputs of length {self._input_expected_length}."
+
+
+class InputStimuliMisused(Exception):
+    def __init__(self, input_bit_index, expected_areas, actual_areas) -> None:
+        self._input_bit_index = input_bit_index
+        self._expected_areas = expected_areas
+        self._actual_areas = actual_areas
+
+    def __str__(self) -> str:
+        return f"Input stimuli of bit {self._input_bit_index} was defined to fire to areas {self._expected_areas}. " \
+               f"It cannot be used fire to a different set of areas (attempted firing to {self._actual_areas})."
 
 
 class SequenceFinalizationError(Exception):

@@ -1,7 +1,7 @@
 from unittest import TestCase
 
-from learning.components.data_set import create_explicit_mask_from_callable
-from learning.components.data_set import MaskValueError, InvalidFunctionError
+from learning.components.data_set.constructors import create_explicit_mask_from_callable
+from learning.components.data_set.errors import InvalidFunctionError, MaskValueError
 
 
 class TestMaskFromCallable(TestCase):

@@ -6,10 +6,11 @@ from tests.test_components.learning_component_test_base import LearningComponent
 class TestLearningTask(LearningComponentTestBase):
 
     def test_learning_sanity(self):
-        learning = LearningTask(brain=self.brain, domain_size=2)
+        learning = LearningTask(brain=self.brain)
         data_set = create_data_set_from_list([0, 1, 0, 1])
 
         learning.sequence = self.sequence
+        learning.input_stimuli = self.input_stimuli
         learning.training_set = data_set
 
         model = learning.create_model(number_of_sequence_cycles=50)
@@ -17,8 +18,9 @@ class TestLearningTask(LearningComponentTestBase):
         self.assertEqual(1, test_results.accuracy)
 
     def test_learning_with_two_separated_models_sanity(self):
-        learning = LearningTask(brain=self.brain, domain_size=2)
+        learning = LearningTask(brain=self.brain)
         learning.sequence = self.sequence
+        learning.input_stimuli = self.input_stimuli
 
         data_set1 = create_data_set_from_list([0, 1, 0, 1])
         learning.training_set = data_set1

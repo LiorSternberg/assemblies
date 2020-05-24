@@ -1,5 +1,6 @@
 from unittest import TestCase
 
+from learning.components.input import InputStimuli
 from learning.components.sequence import LearningSequence
 from tests.brain_test_utils import BrainTestUtils
 
@@ -12,10 +13,9 @@ class LearningComponentTestBase(TestCase):
                                         area_size=100, winners_size=10, add_output_area=True)
 
         self.sequence = LearningSequence(self.brain)
-        self.sequence.add_iteration(stimuli_to_areas={'A': ['A'], 'B': ['A'], 'C': ['B'], 'D': ['B']},
-                                    areas_to_areas={})
-        self.sequence.add_iteration(stimuli_to_areas={},
-                                    areas_to_areas={'A': ['C'], 'B': ['C']})
-        self.sequence.add_iteration(stimuli_to_areas={},
-                                    areas_to_areas={'C': ['output']})
+        self.sequence.add_iteration(input_bits_to_areas={0: ['A'], 1: ['B']})
+        self.sequence.add_iteration(areas_to_areas={'A': ['C'], 'B': ['C']})
+        self.sequence.add_iteration(areas_to_areas={'C': ['output']})
+
+        self.input_stimuli = InputStimuli(self.brain, 10, 'A', 'B', verbose=False)
 

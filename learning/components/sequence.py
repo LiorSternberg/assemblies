@@ -1,30 +1,50 @@
+from copy import deepcopy
 from itertools import chain
-from typing import List, Union, Dict
-from networkx import DiGraph, has_path, draw, draw_networkx_edge_labels, get_node_attributes, get_edge_attributes
+from typing import List, Union, Dict, Tuple
+
 import matplotlib.pyplot as plt
+from networkx import DiGraph, has_path, draw, draw_networkx_edge_labels, get_node_attributes, get_edge_attributes
 
 from brain import Brain, Area, OutputArea
-from learning.components.errors import MissingStimulus, MissingArea, SequenceRunNotInitialized, NoPathException, \
-    IllegalOutputAreasException, SequenceFinalizationError
+from learning.components.errors import MissingArea, SequenceRunNotInitialized, NoPathException, \
+    IllegalOutputAreasException, SequenceFinalizationError, MissingStimulus, InputStimuliMisused
+from learning.components.input import InputStimuli
 
 
 class LearningSequence:
 
     class Iteration:
-        def __init__(self, stimuli_to_areas: Dict[str, List[str]], areas_to_areas: Dict[str, List[str]],
-                     consecutive_runs: int):
-            self.stimuli_to_areas = stimuli_to_areas
-            self.areas_to_areas = areas_to_areas
+        def __init__(self, stimuli_to_areas: Dict[str, List[str]] = None, input_bits_to_areas: Dict[int, List[str]] = None,
+                     areas_to_areas: Dict[str, List[str]] = None, consecutive_runs: int = 1):
+            self.areas_to_areas = areas_to_areas or {}
+            self.stimuli_to_areas = stimuli_to_areas or {}
+            self.input_bits_to_areas = input_bits_to_areas or {}
             self.consecutive_runs = consecutive_runs
 
-        def format(self, active_stimuli: List[str]) -> dict:
+        @staticmethod
+        def _to_bits(input_value: int, size: int) -> Tuple[int, ...]:
+            return tuple(int(bit) for bit in bin(input_value)[2:].zfill(size))
+
+        def format(self, input_stimuli: InputStimuli, input_value: int) -> dict:
             """
-            Converting the Iteration object into project parameters, while filtering out firing non-active stimuli
-            in the iteration)
-            :param active_stimuli: the active stimuli when running the iteration
+            Converting the Iteration object into project parameters, using the input definition
+            (the InputStimuli object) and the current input value.
+            :param input_stimuli: the InputStimuli object which defines the mapping between input bits and pairs of
+            stimuli (one for each possible value of the bit).
+            :param input_value: the input value as a base 10 integer (for example, for the input 101, use 5).
             """
-            return dict(stim_to_area={stimulus: areas for stimulus, areas in self.stimuli_to_areas.items()
-                                      if stimulus in active_stimuli}, area_to_area=self.areas_to_areas)
+            input_value = self._to_bits(input_value, len(input_stimuli))
+            stimuli_to_area = deepcopy(self.stimuli_to_areas)
+            for bit_index, area_names in self.input_bits_to_areas.items():
+                if sorted(input_stimuli[bit_index].target_areas) != sorted(area_names):
+                    raise InputStimuliMisused(bit_index, input_stimuli[bit_index].target_areas, area_names)
+
+                bit_value = input_value[bit_index]
+                stimulus_name = input_stimuli[bit_index][bit_value]
+                stimuli_to_area[stimulus_name] = area_names
+
+            return dict(stim_to_area=stimuli_to_area,
+                        area_to_area=self.areas_to_areas)
 
     class IterationConfiguration:
         def __init__(self, current_cycle: int, current_iter: int, current_run: int,
@@ -84,6 +104,7 @@ class LearningSequence:
         """
         output_area = self._verify_single_output_area()
         self.output_area = self._brain.output_areas[output_area]
+        self._verify_input_bits_are_connected_to_output()
         self._verify_stimuli_are_connected_to_output()
 
     def initialize_run(self, number_of_cycles=float('inf')):
@@ -116,11 +137,12 @@ class LearningSequence:
             raise MissingArea(area_name)
         return self._brain.areas.get(area_name, self._brain.output_areas.get(area_name))
 
-    def add_iteration(self, stimuli_to_areas: Dict[str, List[str]], areas_to_areas: Dict[str, List[str]],
-                      consecutive_runs=1):
+    def add_iteration(self, areas_to_areas: Dict[str, List[str]] = None, input_bits_to_areas: Dict[int, List[str]] = None,
+                      stimuli_to_areas: Dict[str, List[str]] = None, consecutive_runs=1):
         """
         Adding an iteration to the learning sequence, consisting of firing stimuli/areas and fired-at areas/output areas
         :param stimuli_to_areas: a mapping between a stimulus and the areas/output areas it fires to
+        :param input_bits_to_areas: a mapping between a bit in the input and the areas it's stimuli fire to
         :param areas_to_areas: a mapping between an area and the areas/output areas it fires to
         :param consecutive_runs: the number of consecutive times this iteration is sent (for projection) before moving
             to the next iteration
@@ -128,29 +150,42 @@ class LearningSequence:
         if self._finalized:
             raise SequenceFinalizationError()
 
-        for source_stimulus, target_areas in stimuli_to_areas.items():
-            self._verify_stimulus(source_stimulus)
+        if stimuli_to_areas:
+            for source_stimulus, target_areas in stimuli_to_areas.items():
+                self._verify_stimulus(source_stimulus)
 
-            stimulus_node = f'stimulus-{source_stimulus}'
+                stimulus_node = f'stimulus-{source_stimulus}'
 
-            for target_area in target_areas:
-                area_type = 'output' if isinstance(self._verify_and_get_area(target_area), OutputArea) else 'area'
-                area_node = f'{area_type}-{target_area}'
+                for target_area in target_areas:
+                    area_type = 'output' if isinstance(self._verify_and_get_area(target_area), OutputArea) else 'area'
+                    area_node = f'{area_type}-{target_area}'
 
-                self._add_edge(stimulus_node, area_node, consecutive_runs)
+                    self._add_edge(stimulus_node, area_node, consecutive_runs)
 
-        for source_area, target_areas in areas_to_areas.items():
-            self._verify_and_get_area(source_area)
+        if input_bits_to_areas:
+            for source_input_bit, target_areas in input_bits_to_areas.items():
+                input_bit_node = f'input-bit-{source_input_bit}'
 
-            source_area_node = f'area-{source_area}'
+                for target_area in target_areas:
+                    area_type = 'output' if isinstance(self._verify_and_get_area(target_area), OutputArea) else 'area'
+                    area_node = f'{area_type}-{target_area}'
 
-            for target_area in target_areas:
-                area_type = 'output' if isinstance(self._verify_and_get_area(target_area), OutputArea) else 'area'
-                target_area_node = f'{area_type}-{target_area}'
+                    self._add_edge(input_bit_node, area_node, consecutive_runs)
 
-                self._add_edge(source_area_node, target_area_node, consecutive_runs)
+        if areas_to_areas:
+            for source_area, target_areas in areas_to_areas.items():
+                self._verify_and_get_area(source_area)
+
+                source_area_node = f'area-{source_area}'
+
+                for target_area in target_areas:
+                    area_type = 'output' if isinstance(self._verify_and_get_area(target_area), OutputArea) else 'area'
+                    target_area_node = f'{area_type}-{target_area}'
+
+                    self._add_edge(source_area_node, target_area_node, consecutive_runs)
 
         new_iteration = self.Iteration(stimuli_to_areas=stimuli_to_areas,
+                                       input_bits_to_areas=input_bits_to_areas,
                                        areas_to_areas=areas_to_areas,
                                        consecutive_runs=consecutive_runs)
         self._iterations.append(new_iteration)
@@ -191,6 +226,19 @@ class LearningSequence:
             for area in output_areas:
                 if not has_path(self._connections_graph, stimulus, area):
                     raise NoPathException(stimulus[9:], area[7:])
+
+    def _verify_input_bits_are_connected_to_output(self):
+        """
+        Checking that there is a directed path of projection between each input bit and each output area.
+        In case one doesn't exist, this function raises an exception
+        """
+        input_bits = [node for node in self._connections_graph.nodes if node.startswith('input-bit')]
+        output_areas = [node for node in self._connections_graph.nodes if node.startswith('output')]
+
+        for input_bit in input_bits:
+            for area in output_areas:
+                if not has_path(self._connections_graph, input_bit, area):
+                    raise NoPathException(input_bit[10:], area[7:])
 
     def _verify_single_output_area(self):
         """

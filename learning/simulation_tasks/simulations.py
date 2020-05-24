@@ -24,11 +24,13 @@ def _create_model(strategy: Strategy,
 
     sequence = simulation_utils.create_sequence(brain)
     sequence.display()
+    input_stimuli = simulation_utils.create_input_stimuli(brain, k=100)
     training_set = simulation_utils.create_training_set(output_values_or_function, training_set_size_function, noise)
 
-    learning = LearningTask(brain, domain_size=domain_size)
+    learning = LearningTask(brain)
     learning.sequence = sequence
     learning.training_set = training_set
+    learning.input_stimuli = input_stimuli
 
     model = learning.create_model(number_of_sequence_cycles=1)
     test_set = simulation_utils.create_test_set(output_values_or_function)

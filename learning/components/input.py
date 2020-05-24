@@ -12,11 +12,16 @@ AUTO_GENERATED_STIMULUS_NAME_POSTFIX = "_({})"
 MAX_ATTEMPTS = 100
 
 
-class InputBit:
-    def __init__(self, stimulus_for_0: str, stimulus_for_1: str) -> None:
+class InputBitStimuli:
+    """
+    An object representing a pair of stimuli which match a specific bit in the input,
+    and which are meant to fire into a certain set of brain areas.
+    """
+    def __init__(self, stimulus_for_0: str, stimulus_for_1: str, target_areas: List[str]) -> None:
         super().__init__()
         self._stimulus_for_0 = stimulus_for_0
         self._stimulus_for_1 = stimulus_for_1
+        self._target_areas = target_areas
 
     @property
     def stimulus_for_0(self) -> str:
@@ -25,6 +30,10 @@ class InputBit:
     @property
     def stimulus_for_1(self) -> str:
         return self._stimulus_for_1
+
+    @property
+    def target_areas(self) -> List[str]:
+        return self._target_areas
 
     def __getitem__(self, item) -> str:
         if item not in (0, 1):
@@ -40,15 +49,16 @@ class InputBit:
             return self.stimulus_for_1
 
     def __repr__(self) -> str:
-        return f"<InputBit(0: {self.stimulus_for_0}, 1: {self.stimulus_for_1})>"
+        return f"<InputBitStimuli(0: {self.stimulus_for_0}, 1: {self.stimulus_for_1}, target: {self.target_areas})>"
 
 
-class InputBits:
+class InputStimuli:
     def __init__(self, brain: Brain, stimulus_k: int, *area_names: Union[str, List[str]],
-                 override: Dict[int, Tuple[str, str]] = None) -> None:
+                 override: Dict[int, Tuple[str, str]] = None, verbose=True) -> None:
         super().__init__()
-        self._input_bits: List[InputBit] = self._generate_input_bits(brain, stimulus_k, area_names, override)
-        print(self)
+        self._input_bits: List[InputBitStimuli] = self._generate_input_bits(brain, stimulus_k, area_names, override)
+        if verbose:
+            print(self)
 
     def __len__(self) -> int:
         return len(self._input_bits)
@@ -58,8 +68,9 @@ class InputBits:
 
     def __repr__(self) -> str:
         bits_mapping_to_stimuli = ',\n'.join(f"\t{i}: ({input_bit.stimulus_for_0}, {input_bit.stimulus_for_1})"
+                                             f" -> {input_bit.target_areas}"
                                              for i, input_bit in enumerate(self._input_bits))
-        return f"<InputBits(length={len(self)}, " \
+        return f"<InputStimuli(length={len(self)}, " \
                f"bits_mapping_to_stimuli={{\n{bits_mapping_to_stimuli}\n}})>" \
 
     @staticmethod
@@ -120,7 +131,7 @@ class InputBits:
 
         return stimulus_name
 
-    def _generate_input_bits(self, brain, stimulus_k, area_names, override) -> List[InputBit]:
+    def _generate_input_bits(self, brain, stimulus_k, area_names, override) -> List[InputBitStimuli]:
         input_bits = []
 
         for bit, area_names_item in enumerate(area_names):
@@ -128,13 +139,13 @@ class InputBits:
 
             if override and bit in override:
                 self._validate_override_input_bit(brain, override[bit])
-                input_bits.append(InputBit(*override[bit]))
+                input_bits.append(InputBitStimuli(override[bit][0], override[bit][1], list(area_names_item)))
 
             else:
                 stimulus_0 = self._get_available_stimulus_name(brain, area_names_item, input_bit_value=0)
                 stimulus_1 = self._get_available_stimulus_name(brain, area_names_item, input_bit_value=1)
                 brain.add_stimulus(name=stimulus_0, k=stimulus_k)
                 brain.add_stimulus(name=stimulus_1, k=stimulus_k)
-                input_bits.append(InputBit(stimulus_0, stimulus_1))
+                input_bits.append(InputBitStimuli(stimulus_0, stimulus_1, list(area_names_item)))
 
         return input_bits

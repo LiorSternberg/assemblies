@@ -1,17 +1,18 @@
 from brain import Brain
 from learning.components.data_set.lib.training_set import TrainingSet
 from learning.components.errors import ItemNotInitialized
+from learning.components.input import InputStimuli
 from learning.components.sequence import LearningSequence
 from learning.components.model import LearningModel
 
 
 class LearningTask:
 
-    def __init__(self, brain: Brain, domain_size: int):
+    def __init__(self, brain: Brain):
         self.brain = brain
-        self.domain_size = domain_size
 
         self._sequence = None
+        self._input_stimuli = None
         self._training_set = None
 
     @property
@@ -23,6 +24,16 @@ class LearningTask:
     @sequence.setter
     def sequence(self, sequence: LearningSequence):
         self._sequence = sequence
+
+    @property
+    def input_stimuli(self):
+        if not self._input_stimuli:
+            raise ItemNotInitialized('Input stimuli')
+        return self._input_stimuli
+
+    @input_stimuli.setter
+    def input_stimuli(self, input_stimuli: InputStimuli):
+        self._input_stimuli = input_stimuli
 
     @property
     def training_set(self):
@@ -42,7 +53,7 @@ class LearningTask:
         :return: the learning model
         """
         learning_model = LearningModel(brain=self.brain,
-                                       domain_size=self.domain_size,
-                                       sequence=self.sequence)
+                                       sequence=self.sequence,
+                                       input_stimuli=self.input_stimuli)
         learning_model.train_model(training_set=self.training_set, number_of_sequence_cycles=number_of_sequence_cycles)
         return learning_model

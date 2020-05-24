@@ -6,6 +6,7 @@ from brain import Brain
 from learning.components.data_set.constructors import create_training_set_from_list, \
     create_explicit_mask_from_list, create_data_set_from_list
 from learning.components.data_set.data_set import DataSet
+from learning.components.input import InputStimuli
 from learning.components.sequence import LearningSequence
 from learning.simulation_tasks.strategy import Strategy
 from non_lazy_brain import NonLazyBrain
@@ -42,6 +43,13 @@ class SimulationUtils:
     def create_sequence(self, brain: Brain) -> LearningSequence:
         """
         Creating the learning sequence that was found most efficient for learning
+        """
+        pass
+
+    @abstractmethod
+    def create_input_stimuli(self, brain: Brain, k: int) -> InputStimuli:
+        """
+        Creating an input stimuli according to the domain size and the strategy
         """
         pass
 
@@ -101,24 +109,23 @@ class SimpleSimulationUtils(SimulationUtils):
         brain = NonLazyBrain(p)
 
         brain.add_area('A', n, k, beta)
-
-        for i in range(self.domain_size * 2):
-            stimulus_name = self._name(i)
-            brain.add_stimulus(stimulus_name, k)
-
         brain.add_output_area('Output')
+
         return brain
+
+    def create_input_stimuli(self, brain: Brain, k: int) -> InputStimuli:
+        return InputStimuli(brain, k, *tuple(['A'] * self.domain_size), verbose=False)
 
     def create_sequence(self, brain: Brain) -> LearningSequence:
         sequence = LearningSequence(brain)
 
-        # All stimuli fire to area 'A
-        stimuli_to_areas = {self._name(i): ['A'] for i in range(self.domain_size * 2)}
-        sequence.add_iteration(stimuli_to_areas=stimuli_to_areas, areas_to_areas={})
+        # All stimuli fire to area 'A'
+        input_bits_to_areas = {i: ['A'] for i in range(self.domain_size)}
+        sequence.add_iteration(input_bits_to_areas=input_bits_to_areas, areas_to_areas={})
 
-        sequence.add_iteration(stimuli_to_areas=stimuli_to_areas, areas_to_areas={'A': ['A']}, consecutive_runs=2)
+        sequence.add_iteration(input_bits_to_areas=input_bits_to_areas, areas_to_areas={'A': ['A']}, consecutive_runs=2)
 
-        sequence.add_iteration(stimuli_to_areas={}, areas_to_areas={'A': ['Output']})
+        sequence.add_iteration(input_bits_to_areas={}, areas_to_areas={'A': ['Output']})
 
         return sequence
 
@@ -153,38 +160,37 @@ class LayeredSimulationUtils(SimulationUtils):
                 brain.add_area(area_name, n, k, beta)
                 areas_count += 1
 
-        for i in range(self.domain_size * 2):
-            stimulus_name = self._name(i)
-            brain.add_stimulus(stimulus_name, k)
-
         brain.add_output_area('Output')
         return brain
+
+    def create_input_stimuli(self, brain: Brain, k: int) -> InputStimuli:
+        return InputStimuli(brain, k, *tuple(self._name(i) for i in range(self.domain_size)), verbose=False)
 
     def create_sequence(self, brain: Brain) -> LearningSequence:
         sequence = LearningSequence(brain)
 
-        # The first two stimuli fire to the first area, the next two stimuli fire to the second area, etc
-        stimuli_to_areas = {self._name(i): [self._name(i // 2)] for i in range(self.domain_size * 2)}
-        sequence.add_iteration(stimuli_to_areas=stimuli_to_areas, areas_to_areas={})
+        # The first input bit fires to the first area, the second fires to the second area, etc
+        input_bits_to_areas = {i: [self._name(i)] for i in range(self.domain_size)}
+        sequence.add_iteration(input_bits_to_areas=input_bits_to_areas, areas_to_areas={})
 
         area_layers = self._split_to_area_layers(brain)
 
         # Every first-layer area (i.e. all areas connected directly to stimuli) fires at itself
         areas_to_areas = {area: [area] for area in area_layers[0]}
-        sequence.add_iteration(stimuli_to_areas=stimuli_to_areas, areas_to_areas=areas_to_areas, consecutive_runs=2)
+        sequence.add_iteration(input_bits_to_areas=input_bits_to_areas, areas_to_areas=areas_to_areas, consecutive_runs=2)
 
         for layer in range(self.brain_layers - 1):
             # Every 2 'consecutive' areas fire at an area of the next layer
             areas_to_areas = {area: [area_layers[layer + 1][idx // 2]] for idx, area in enumerate(area_layers[layer])}
-            sequence.add_iteration(stimuli_to_areas={}, areas_to_areas=areas_to_areas)
+            sequence.add_iteration(input_bits_to_areas={}, areas_to_areas=areas_to_areas)
 
             # In addition to the previous iteration, every area of the next layer fires at itself
             areas_to_areas = dict(areas_to_areas, **{area: [area] for area in area_layers[layer + 1]})
-            sequence.add_iteration(stimuli_to_areas={}, areas_to_areas=areas_to_areas, consecutive_runs=2)
+            sequence.add_iteration(input_bits_to_areas={}, areas_to_areas=areas_to_areas, consecutive_runs=2)
 
         # The last later fires at the output
         areas_to_areas = {area: ['Output'] for area in area_layers[-1]}
-        sequence.add_iteration(stimuli_to_areas={}, areas_to_areas=areas_to_areas)
+        sequence.add_iteration(input_bits_to_areas={}, areas_to_areas=areas_to_areas)
 
         return sequence
 
