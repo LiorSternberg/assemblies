@@ -268,7 +268,7 @@ class TestLearningSequence(TestCase):
             self.assertEqual(expected_iterations[idx], iteration.format(input_stimuli, 0))
 
     def test_sequence_with_input_bits_and_stimuli_combines_the_dicts(self):
-        input_stimuli = InputStimuli(self.brain, 100, 'A', 'B', verbose=True, override={0: ('A', 'C')})
+        input_stimuli = InputStimuli(self.brain, 100, 'A', 'B', verbose=False, override={0: ('A', 'C')})
         sequence = LearningSequence(self.brain)
         sequence.add_iteration(input_bits_to_areas={0: ['A'], 1: ['B']}, stimuli_to_areas={'A': ['B'], 'B': ['C']})
         sequence.add_iteration(areas_to_areas={'A': ['C'], 'B': ['C']})
