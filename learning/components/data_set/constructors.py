@@ -28,6 +28,21 @@ def create_data_set_from_callable(
     Going over the same noisy data set multiple time will most likely generate
     different results (different outputs might be flipped).
     :return: The data set representing these parameters.
+
+    Usage example:
+
+    To create a data set with inputs of size 4 (such as 0000, 0001, ..., 1111),
+    and with noise probability 0.5 (expected half the bits are flipped), and
+    set the output function to be 0 if the input is even, and 1 if the input is
+    odd, one can run the following:
+
+    >>> data_set = create_data_set_from_callable(lambda x: x % 2, 4, noise_probability=0.5)
+
+    The returned data set is iterable, so to get the next data point one can
+    simply loop over it, like this:
+
+    >>> for data_point in data_set:
+    ...  print(data_point.input, data_point.output)
     """
     return _CallableDataSet(function, domain_size, noise_probability)
 
@@ -48,6 +63,27 @@ def create_data_set_from_list(
     Going over the same noisy data set multiple time will most likely generate
     different results (different outputs might be flipped).
     :return: The data set representing these parameters.
+
+    Usage example:
+
+    To create a data set with inputs of size 4 (such as 0000, 0001, ..., 1111),
+    and with noise probability 0.5 (expected half the bits are flipped), and
+    set the output function to be 0 if the input is even, and 1 if the input is
+    odd, one can run the following:
+
+    >>> return_values = [
+    ...     0, 1, 0, 1,
+    ...     0, 1, 0, 1,
+    ...     0, 1, 0, 1,
+    ...     0, 1, 0, 1
+    ... ]
+    >>> data_set = create_data_set_from_list(return_values, noise_probability=0.5)
+
+    The returned data set is iterable, so to get the next data point one can
+    simply loop over it, like this:
+
+    >>> for data_point in data_set:
+    ...  print(data_point.input, data_point.output)
     """
     return _ValuesListDataSet(return_values, noise_probability)
 
@@ -64,6 +100,11 @@ def create_lazy_mask(percentage: float, seed: int = None) -> Mask:
     seed will perform exactly the same.
     :return: The mask object, used to split a data set into a training set and a
     test set.
+
+    Usage example:
+
+    To create a lazy mask that covers 60% of the indices, one can run:
+    >>> mask = create_lazy_mask(0.6)
     """
     return _LazyMask(percentage, seed)
 
@@ -76,6 +117,19 @@ def create_explicit_mask_from_list(mask_values: List[int]) -> Mask:
     :param mask_values: The mask values, as a list of 0s and 1s.
     :return: The mask object, used to split a data set into a training set and a
     test set.
+
+    Usage example:
+
+    To create an explicit mask that covers the first 4 indices, and does not
+    cover the last 4 indices, one can run:
+    >>> mask = create_explicit_mask_from_list([1, 1, 1, 1, 0, 0, 0, 0])
+
+    And then:
+    >>> mask.in_training_set(0)
+    Returns True.
+
+    >>> mask.in_training_set(4)
+    Returns False.
     """
     return _ExplicitListMask(mask_values)
 
@@ -88,6 +142,23 @@ def create_explicit_mask_from_callable(function: Callable[[int], int]) -> Mask:
     :param function: The boolean function to use as the mask.
     :return: The mask object, used to split a data set into a training set and a
     test set.
+
+    Usage example:
+
+    To create an explicit mask that covers the first 4 indices, and does not
+    cover the last 4 indices, one can run:
+    >>> mask = create_explicit_mask_from_callable(lambda x: x < 4)
+
+    And then:
+    >>> mask.in_training_set(0)
+    Returns True.
+    >>> mask.in_test_set(0)
+    Returns False.
+
+    >>> mask.in_training_set(4)
+    Returns False.
+    >>> mask.in_test_set(4)
+    Returns True.
     """
     return _ExplicitCallableMask(function)
 
@@ -115,6 +186,23 @@ def create_training_and_test_sets_from_callable(
     'noisy' result (bit flip). Only applies to the training set. The test set
     is never noisy.
     :return: The data sets representing these parameters.
+
+    Usage example:
+
+    To create a training set and a matching test set with inputs of size 4
+    (such as 0000, 0001, ..., 1111), and with noise probability 0.5 (expected
+    half the bits are flipped), and set the output function to be 0 if the
+    input is even, and 1 if the input is odd, and use the first 4 inputs for
+    the training set of length 100, and the rest for the test set, one can run
+    the following:
+
+    >>> mask = create_explicit_mask_from_callable(lambda x: x < 4)
+    >>> data_sets = create_training_and_test_sets_from_callable(
+    ...     lambda x: x % 2, 4, mask, 100, noise_probability=0.5)
+
+    This returns a tuple of training and test sets:
+    >>> test_set = data_sets.test_set
+    >>> training_set = data_sets.training_set
     """
     base_data_set = create_data_set_from_callable(data_set_function, domain_size, noise_probability)
     return DataSets(training_set=_TrainingSet(base_data_set, mask, training_set_length, noise_probability),
@@ -144,6 +232,29 @@ def create_training_and_test_sets_from_list(
     'noisy' result (bit flip). Only applies to the training set. The test set
     is never noisy.
     :return: The data sets representing these parameters.
+
+        Usage example:
+
+    To create a training set and a matching test set with inputs of size 4
+    (such as 0000, 0001, ..., 1111), and with noise probability 0.5 (expected
+    half the bits are flipped), and set the output function to be 0 if the
+    input is even, and 1 if the input is odd, and use the first 4 inputs for
+    the training set of length 100, and the rest for the test set, one can run
+    the following:
+
+    >>> return_values = [
+    ...     0, 1, 0, 1,
+    ...     0, 1, 0, 1,
+    ...     0, 1, 0, 1,
+    ...     0, 1, 0, 1
+    ... ]
+    >>> mask = create_explicit_mask_from_callable(lambda x: x < 4)
+    >>> data_sets = create_training_and_test_sets_from_list(
+    ...     return_values, mask, 100, noise_probability=0.5)
+
+    This returns a tuple of training and test sets:
+    >>> test_set = data_sets.test_set
+    >>> training_set = data_sets.training_set
     """
     base_data_set = create_data_set_from_list(data_set_return_values, noise_probability)
     return DataSets(training_set=_TrainingSet(base_data_set, mask, training_set_length, noise_probability),
@@ -172,6 +283,24 @@ def create_training_set_from_callable(
     'noisy' result (bit flip). Only applies to the training set. The test set
     is never noisy.
     :return: The data sets representing these parameters.
+
+    Usage example:
+
+    To create a training set of length 100 with inputs of size 4 (such as 0000,
+    0001, ..., 1111), that only contains the first 10 inputs, and with noise
+    probability 0.5 (expected half the bits are flipped), and set the output
+    function to be 0 if the input is even, and 1 if the input is odd, one can
+    run the following:
+
+    >>> create_explicit_mask_from_callable(lambda x: x < 10)
+    >>> training_set = create_training_set_from_callable(
+    ...     lambda x: x % 2, 4, mask, 100, noise_probability=0.5)
+
+    The returned training set is iterable, so to get the next data point one can
+    simply loop over it, like this:
+
+    >>> for data_point in training_set:
+    ...  print(data_point.input, data_point.output)
     """
 
     base_data_set = create_data_set_from_callable(data_set_function, domain_size, noise_probability)
@@ -183,7 +312,7 @@ def create_test_set_from_callable(
         domain_size: int,
         mask: Mask) -> DataSet:
     """
-    Simplified way to create a  test set from a function (a python callable).
+    Simplified way to create a test set from a function (a python callable).
     Note that the function should get one argument, an integer between 0 and
     2 ** domain_size, and return 0 or 1.
     :param data_set_function: The boolean function to generate a data set from.
@@ -191,6 +320,21 @@ def create_test_set_from_callable(
     :param mask: The mask object used to split the data set into a training set
     and a test set. Only uncovered indices will belong to the test set.
     :return: The data sets representing these parameters.
+
+    Usage example:
+
+    To create a test set with inputs of size 4 (such as 0000, 0001, ..., 1111),
+    that only contains the first 10 inputs, and set the output function to be 0
+    if the input is even, and 1 if the input is odd, one can run the following:
+
+    >>> create_explicit_mask_from_callable(lambda x: x < 10)
+    >>> test_set = create_test_set_from_callable(lambda x: x % 2, 4, mask)
+
+    The returned test set is iterable, so to get the next data point one can
+    simply loop over it, like this:
+
+    >>> for data_point in test_set:
+    ...  print(data_point.input, data_point.output)
     """
     base_data_set = create_data_set_from_callable(data_set_function, domain_size)
     return _TestSet(base_data_set, mask)
@@ -202,7 +346,7 @@ def create_training_set_from_list(
         training_set_length: int,
         noise_probability: float = 0.) -> DataSet:
     """
-    Simplified way to create a test set from a list of return values
+    Simplified way to create a training set from a list of return values
     representing a boolean function. Note that the list should be of length that
     is a power of two (to represent a full function), and contain only 0s and 1s.
     :param data_set_return_values: The return values of the function represented
@@ -217,7 +361,31 @@ def create_training_set_from_list(
     'noisy' result (bit flip). Only applies to the training set. The test set
     is never noisy.
     :return: The data sets representing these parameters.
-    """
+
+    Usage example:
+
+    To create a training set of length 100 with inputs of size 4 (such as 0000,
+    0001, ..., 1111), that only contains the first 10 inputs, and with noise
+    probability 0.5 (expected half the bits are flipped), and set the output
+    function to be 0 if the input is even, and 1 if the input is odd, one can
+    run the following:
+
+    >>> create_explicit_mask_from_callable(lambda x: x < 10)
+    >>> return_values = [
+    ...     0, 1, 0, 1,
+    ...     0, 1, 0, 1,
+    ...     0, 1, 0, 1,
+    ...     0, 1, 0, 1
+    ... ]
+    >>> training_set = create_training_set_from_list(
+    ...     return_values, mask, 100, noise_probability=0.5)
+
+    The returned training set is iterable, so to get the next data point one can
+    simply loop over it, like this:
+
+    >>> for data_point in training_set:
+    ...  print(data_point.input, data_point.output)
+"""
     base_data_set = create_data_set_from_list(data_set_return_values, noise_probability)
     return _TrainingSet(base_data_set, mask, training_set_length, noise_probability)
 
@@ -234,6 +402,28 @@ def create_test_set_from_list(
     :param mask: The mask object used to split the data set into a training set
     and a test set. Only uncovered indices will belong to the test set.
     :return: The data sets representing these parameters.
+
+    Usage example:
+
+    To create a test set with inputs of size 4 (such as 0000, 0001, ..., 1111),
+    that only contains the first 10 inputs, and set the output function to be 0
+    if the input is even, and 1 if the input is odd, one can run the following:
+
+    >>> create_explicit_mask_from_callable(lambda x: x < 10)
+    >>> return_values = [
+    ...     0, 1, 0, 1,
+    ...     0, 1, 0, 1,
+    ...     0, 1, 0, 1,
+    ...     0, 1, 0, 1
+    ... ]
+    >>> test_set = create_test_set_from_list(return_values, mask)
+
+    The returned test set is iterable, so to get the next data point one can
+    simply loop over it, like this:
+
+    >>> for data_point in test_set:
+    ...  print(data_point.input, data_point.output)
+
     """
     base_data_set = create_data_set_from_list(data_set_return_values)
     return _TestSet(base_data_set, mask)
