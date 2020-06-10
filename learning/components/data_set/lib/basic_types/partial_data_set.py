@@ -21,5 +21,5 @@ class PartialDataSet(DataSetBase, metaclass=ABCMeta):
         return self
 
     @property
-    def domain_size(self):
-        return self._base_data_set.domain_size
+    def input_size(self):
+        return self._base_data_set.input_size

@@ -43,7 +43,7 @@ class PrepWork:
         return tuple(int(bit) for bit in self._binary(input_value))
 
     def _binary(self, input_value):
-        return bin(input_value)[2:].zfill(self._data_set.domain_size)
+        return bin(input_value)[2:].zfill(self._data_set.input_size)
 
     def _fire(self, brain: NonLazyBrain, input_value, brain_mode):
         stimuli = self._split_to_bits(input_value)

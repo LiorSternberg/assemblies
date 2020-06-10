@@ -6,7 +6,7 @@ from brain import Brain, OutputArea
 from learning.brain_modes import BrainLearningMode
 from learning.components.configurations import LearningConfigurations
 from learning.components.data_set.data_set import DataSet
-from learning.components.errors import DomainSizeMismatch, InputStimuliAndSequenceMismatch
+from learning.components.errors import InputSizeMismatch, InputStimuliAndSequenceMismatch
 from learning.components.input import InputStimuli
 from learning.components.sequence import LearningSequence
 
@@ -26,7 +26,7 @@ class LearningModel:
         self._brain = brain
         self._sequence = sequence
         self._input_stimuli = input_stimuli
-        self._domain_size = len(input_stimuli)
+        self._input_size = len(input_stimuli)
 
     def _validate_sequence_matches_input_size(self):
         """
@@ -51,8 +51,8 @@ class LearningModel:
         :param number_of_sequence_cycles: the number of times the entire sequence should run while on training mode.
             If not given, the default value is taken from LearningConfigurations
         """
-        if training_set.domain_size != self._domain_size:
-            raise DomainSizeMismatch('Learning model InputStimuli', 'Training set', self._domain_size, training_set.domain_size)
+        if training_set.input_size != self._input_size:
+            raise InputSizeMismatch('Learning model InputStimuli', 'Training set', self._input_size, training_set.input_size)
 
         number_of_sequence_cycles = number_of_sequence_cycles or LearningConfigurations.NUMBER_OF_TRAINING_CYCLES
 
@@ -69,8 +69,8 @@ class LearningModel:
         :param test_set: the set by which to test the model's accuracy
         :return: the model's accuracy
         """
-        if test_set.domain_size != self._domain_size:
-            raise DomainSizeMismatch('Learning model InputStimuli', 'Test set', self._domain_size, test_set.domain_size)
+        if test_set.input_size != self._input_size:
+            raise InputSizeMismatch('Learning model InputStimuli', 'Test set', self._input_size, test_set.input_size)
 
         true_positive = []
         false_negative = []
@@ -123,12 +123,12 @@ class LearningModel:
 
     def _validate_input_number(self, input_number: int) -> None:
         """
-        Validating that the given number is in the model's domain
+        Validating that the given number is in the model's input domain
         :param: input_number: the number to validate
         """
         input_domain = math.ceil(math.log(input_number + 1, 2))
-        if input_domain > self._domain_size:
-            raise DomainSizeMismatch('Learning model InputStimuli', input_number, self._domain_size, input_domain)
+        if input_domain > self._input_size:
+            raise InputSizeMismatch('Learning model InputStimuli', input_number, self._input_size, input_domain)
 
     @contextmanager
     def _set_brain_mode(self, brain_mode: BrainLearningMode) -> None:

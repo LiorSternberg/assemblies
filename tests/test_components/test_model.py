@@ -1,5 +1,5 @@
 from learning.components.data_set.constructors import create_data_set_from_list
-from learning.components.errors import DomainSizeMismatch
+from learning.components.errors import InputSizeMismatch
 
 from learning.components.model import LearningModel
 from tests.test_components.learning_component_test_base import LearningComponentTestBase
@@ -13,7 +13,7 @@ class TestLearningModel(LearningComponentTestBase):
         self.assertIn(model.run_model(1), [0, 1])
         self.assertIn(model.run_model(2), [0, 1])
         self.assertIn(model.run_model(3), [0, 1])
-        self.assertRaises(DomainSizeMismatch, model.run_model, 4)
+        self.assertRaises(InputSizeMismatch, model.run_model, 4)
 
     def test_run_model_consistency(self):
         model = LearningModel(brain=self.brain, sequence=self.sequence, input_stimuli=self.input_stimuli)

@@ -15,27 +15,27 @@ from non_lazy_brain import NonLazyBrain
 class SimulationUtilsFactory:
 
     @staticmethod
-    def init_utils(strategy: Strategy, domain_size: int):
+    def init_utils(strategy: Strategy, input_size: int):
         if strategy == Strategy.Simple:
-            return SimpleSimulationUtils(domain_size)
+            return SimpleSimulationUtils(input_size)
         elif strategy == Strategy.Layered:
-            return LayeredSimulationUtils(domain_size)
+            return LayeredSimulationUtils(input_size)
 
         raise Exception('Unknown Strategy')
 
 
 class SimulationUtils:
 
-    def __init__(self, domain_size: int):
+    def __init__(self, input_size: int):
         """
-        :param domain_size: the size of the domain, by which to create the stimuli
+        :param input_size: the size of the input, by which to create the stimuli
         """
-        self.domain_size = domain_size
+        self.input_size = input_size
 
     @abstractmethod
     def create_brain(self, n: int, k: int, p: float, beta: float) -> NonLazyBrain:
         """
-        Creating a non-lazy brain with areas and stimuli according to the domain size and the strategy
+        Creating a non-lazy brain with areas and stimuli according to the input size and the strategy
         """
         pass
 
@@ -49,7 +49,7 @@ class SimulationUtils:
     @abstractmethod
     def create_input_stimuli(self, brain: Brain, k: int) -> InputStimuli:
         """
-        Creating an input stimuli according to the domain size and the strategy
+        Creating an input stimuli according to the input size and the strategy
         """
         pass
 
@@ -63,7 +63,7 @@ class SimulationUtils:
         full_mask = create_explicit_mask_from_list([1] * len(output_values))
         return create_training_set_from_list(data_set_return_values=output_values,
                                              mask=full_mask,
-                                             training_set_length=training_set_size_function(self.domain_size),
+                                             training_set_length=training_set_size_function(self.input_size),
                                              noise_probability=noise)
 
     def create_test_set(self, output_values_or_function: Union[List[int], Callable]) -> DataSet:
@@ -78,11 +78,11 @@ class SimulationUtils:
         Converting the outputs (list of output values or function) into outputs list
         """
         if isinstance(output_values_or_function, list):
-            assert len(output_values_or_function) == 2 ** self.domain_size, \
-                f"Domain is of size {self.domain_size}, hence the outputs must be of size {2 ** self.domain_size}"
+            assert len(output_values_or_function) == 2 ** self.input_size, \
+                f"input is of size {self.input_size}, hence the outputs must be of size {2 ** self.input_size}"
             outputs_list = output_values_or_function
         else:
-            outputs_list = [output_values_or_function(i) for i in range(2 ** self.domain_size)]
+            outputs_list = [output_values_or_function(i) for i in range(2 ** self.input_size)]
         return outputs_list
 
     @staticmethod
@@ -114,13 +114,13 @@ class SimpleSimulationUtils(SimulationUtils):
         return brain
 
     def create_input_stimuli(self, brain: Brain, k: int) -> InputStimuli:
-        return InputStimuli(brain, k, *tuple(['A'] * self.domain_size), verbose=False)
+        return InputStimuli(brain, k, *tuple(['A'] * self.input_size), verbose=False)
 
     def create_sequence(self, brain: Brain) -> LearningSequence:
         sequence = LearningSequence(brain)
 
         # All stimuli fire to area 'A'
-        input_bits_to_areas = {i: ['A'] for i in range(self.domain_size)}
+        input_bits_to_areas = {i: ['A'] for i in range(self.input_size)}
         sequence.add_iteration(input_bits_to_areas=input_bits_to_areas, areas_to_areas={})
 
         sequence.add_iteration(input_bits_to_areas=input_bits_to_areas, areas_to_areas={'A': ['A']}, consecutive_runs=2)
@@ -132,7 +132,7 @@ class SimpleSimulationUtils(SimulationUtils):
 
 class LayeredSimulationUtils(SimulationUtils):
     """
-    Utils for a logarithmic-layered brain (according to the domain size), as follows:
+    Utils for a logarithmic-layered brain (according to the input size), as follows:
 
         Stimulus A   Stimulus B         Stimulus C   Stimulus D ...
                 \      /                        \       /
@@ -145,15 +145,15 @@ class LayeredSimulationUtils(SimulationUtils):
 
     @property
     def brain_layers(self):
-        return ceil(log(self.domain_size, 2)) + 1
+        return ceil(log(self.input_size, 2)) + 1
 
     def create_brain(self, n: int, k: int, p: float, beta: float) -> NonLazyBrain:
         brain = NonLazyBrain(p)
 
         areas_count = 0
         for layer_index, area_layer in enumerate(range(self.brain_layers)):
-            # For a domain of size 4: first layer has 4 areas, second layer has 2 areas, third layer has one area
-            areas_in_layer = ceil((2 ** (-layer_index)) * self.domain_size)
+            # For a input of size 4: first layer has 4 areas, second layer has 2 areas, third layer has one area
+            areas_in_layer = ceil((2 ** (-layer_index)) * self.input_size)
 
             for i in range(areas_in_layer):
                 area_name = self._name(areas_count)
@@ -164,13 +164,13 @@ class LayeredSimulationUtils(SimulationUtils):
         return brain
 
     def create_input_stimuli(self, brain: Brain, k: int) -> InputStimuli:
-        return InputStimuli(brain, k, *tuple(self._name(i) for i in range(self.domain_size)), verbose=False)
+        return InputStimuli(brain, k, *tuple(self._name(i) for i in range(self.input_size)), verbose=False)
 
     def create_sequence(self, brain: Brain) -> LearningSequence:
         sequence = LearningSequence(brain)
 
         # The first input bit fires to the first area, the second fires to the second area, etc
-        input_bits_to_areas = {i: [self._name(i)] for i in range(self.domain_size)}
+        input_bits_to_areas = {i: [self._name(i)] for i in range(self.input_size)}
         sequence.add_iteration(input_bits_to_areas=input_bits_to_areas, areas_to_areas={})
 
         area_layers = self._split_to_area_layers(brain)
@@ -206,7 +206,7 @@ class LayeredSimulationUtils(SimulationUtils):
 
         layers = []
         for layer_index in range(self.brain_layers):
-            areas_in_layer = ceil((2 ** (-layer_index)) * self.domain_size)
+            areas_in_layer = ceil((2 ** (-layer_index)) * self.input_size)
             current_layer, areas = areas[:areas_in_layer], areas[areas_in_layer:]
             layers.append(current_layer)
 

@@ -7,7 +7,7 @@ from learning.components.data_set.errors import DataSetSizeError, DataSetValueEr
 class TestCallableDataSet(TestCase):
     def test_data_set_with_list_of_2_works(self):
         s = create_data_set_from_list([1, 0])
-        self.assertEqual(1, s.domain_size)
+        self.assertEqual(1, s.input_size)
         self.assertEqual(1, next(s).output)
         self.assertEqual(0, next(s).output)
         self.assertRaises(StopIteration, next, s)
@@ -29,7 +29,7 @@ class TestCallableDataSet(TestCase):
             1, 0, 1, 0
         ]
         s = create_data_set_from_list(expected)
-        self.assertEqual(4, s.domain_size)
+        self.assertEqual(4, s.input_size)
         for expected_value in expected:
             self.assertEqual(expected_value, next(s).output)
         self.assertRaises(StopIteration, next, s)
@@ -61,7 +61,7 @@ class TestCallableDataSet(TestCase):
         for i, data_point in enumerate(s):
             reused += 1
             self.assertEqual(expected[i], data_point.output)
-        self.assertEqual(2 ** s.domain_size, reused)
+        self.assertEqual(2 ** s.input_size, reused)
 
     def test_data_set_with_full_noise_flips_all_results(self):
         expected_not_noisy = [

@@ -16,7 +16,7 @@ class TestSet(PartialDataSet):
         super().__init__(base_data_set, mask, noise_probability=0.)
 
     def _next(self) -> DataPoint:
-        if self._value == 2 ** self._base_data_set.domain_size - 1:
+        if self._value == 2 ** self._base_data_set.input_size - 1:
             self.reset()
             raise StopIteration()
 

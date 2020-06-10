@@ -13,14 +13,14 @@ from learning.components.data_set.mask import Mask
 
 def create_data_set_from_callable(
         function: Callable[[int], int],
-        domain_size: int,
+        input_size: int,
         noise_probability: float = 0.) -> DataSet:
     """
     Create a base data set (used to create a training / test set) from a
     function (a python callable). Note that the function should get one argument,
-    an integer between 0 and 2 ** domain_size, and return 0 or 1.
+    an integer between 0 and 2 ** input_size, and return 0 or 1.
     :param function: The boolean function to generate a data set from.
-    :param domain_size: The size of the function's domain.
+    :param input_size: The size of the function's input.
     :param noise_probability: The probability in which the data set outputs a
     'noisy' result (bit flip). For example, with noise_probability=1 the data set
     will always flips the output bit, and for noise_probability=0.5 it is
@@ -44,7 +44,7 @@ def create_data_set_from_callable(
     >>> for data_point in data_set:
     ...  print(data_point.input, data_point.output)
     """
-    return _CallableDataSet(function, domain_size, noise_probability)
+    return _CallableDataSet(function, input_size, noise_probability)
 
 
 def create_data_set_from_list(
@@ -165,16 +165,16 @@ def create_explicit_mask_from_callable(function: Callable[[int], int]) -> Mask:
 
 def create_training_and_test_sets_from_callable(
         data_set_function: Callable[[int], int],
-        domain_size: int,
+        input_size: int,
         mask: Mask,
         training_set_length: int,
         noise_probability: float = 0.) -> DataSets:
     """
     Simplified way to create matching training and test sets from a function
     (a python callable). Note that the function should get one argument,
-    an integer between 0 and 2 ** domain_size, and return 0 or 1.
+    an integer between 0 and 2 ** input_size, and return 0 or 1.
     :param data_set_function: The boolean function to generate a data set from.
-    :param domain_size: The size of the function's domain.
+    :param input_size: The size of the function's input.
     :param mask: The mask object used to split the data set into a training set
     and a test set. Covered indices will belong to the training set, and the
     rest to test set.
@@ -204,7 +204,7 @@ def create_training_and_test_sets_from_callable(
     >>> test_set = data_sets.test_set
     >>> training_set = data_sets.training_set
     """
-    base_data_set = create_data_set_from_callable(data_set_function, domain_size, noise_probability)
+    base_data_set = create_data_set_from_callable(data_set_function, input_size, noise_probability)
     return DataSets(training_set=_TrainingSet(base_data_set, mask, training_set_length, noise_probability),
                     test_set=_TestSet(base_data_set, mask))
 
@@ -263,16 +263,16 @@ def create_training_and_test_sets_from_list(
 
 def create_training_set_from_callable(
         data_set_function: Callable[[int], int],
-        domain_size: int,
+        input_size: int,
         mask: Mask,
         training_set_length: int,
         noise_probability: float = 0.) -> DataSet:
     """
     Simplified way to create a training set from a function (a python callable).
     Note that the function should get one argument, an integer between 0 and
-    2 ** domain_size, and return 0 or 1.
+    2 ** input_size, and return 0 or 1.
     :param data_set_function: The boolean function to generate a data set from.
-    :param domain_size: The size of the function's domain.
+    :param input_size: The size of the function's input.
     :param mask: The mask object used to split the data set into a training set
     and a test set. Only covered indices will belong to the training set.
     :param training_set_length: How long should the training set iterator be.
@@ -303,20 +303,20 @@ def create_training_set_from_callable(
     ...  print(data_point.input, data_point.output)
     """
 
-    base_data_set = create_data_set_from_callable(data_set_function, domain_size, noise_probability)
+    base_data_set = create_data_set_from_callable(data_set_function, input_size, noise_probability)
     return _TrainingSet(base_data_set, mask, training_set_length, noise_probability)
 
 
 def create_test_set_from_callable(
         data_set_function: Callable[[int], int],
-        domain_size: int,
+        input_size: int,
         mask: Mask) -> DataSet:
     """
     Simplified way to create a test set from a function (a python callable).
     Note that the function should get one argument, an integer between 0 and
-    2 ** domain_size, and return 0 or 1.
+    2 ** input_size, and return 0 or 1.
     :param data_set_function: The boolean function to generate a data set from.
-    :param domain_size: The size of the function's domain.
+    :param input_size: The size of the function's input.
     :param mask: The mask object used to split the data set into a training set
     and a test set. Only uncovered indices will belong to the test set.
     :return: The data sets representing these parameters.
@@ -336,7 +336,7 @@ def create_test_set_from_callable(
     >>> for data_point in test_set:
     ...  print(data_point.input, data_point.output)
     """
-    base_data_set = create_data_set_from_callable(data_set_function, domain_size)
+    base_data_set = create_data_set_from_callable(data_set_function, input_size)
     return _TestSet(base_data_set, mask)
 
 

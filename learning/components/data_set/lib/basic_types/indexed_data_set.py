@@ -19,8 +19,8 @@ class IndexedDataSet(DataSetBase, metaclass=ABCMeta):
         pass
 
     def __getitem__(self, item) -> DataPoint:
-        if not 0 <= item < 2 ** self.domain_size:
+        if not 0 <= item < 2 ** self.input_size:
             raise IndexError(f"Item of index {item} is out of range (choose an"
-                             f"index between 0 and {2 ** self.domain_size})")
+                             f"index between 0 and {2 ** self.input_size})")
 
         return self._process_output_values(self._get_item(item))

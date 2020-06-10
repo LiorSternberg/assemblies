@@ -29,10 +29,10 @@ class DataSet(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def domain_size(self):
+    def input_size(self):
         """
-        Get the domain size (i.e., the number of bits required to represent
-        an item from the domain of the data set's function's).
+        Get the input size (i.e., the number of bits required to represent
+        an item from the input of the data set's function's).
         :return: int
         """
         pass

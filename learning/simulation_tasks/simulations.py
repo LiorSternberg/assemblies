@@ -9,17 +9,17 @@ from learning.components.task import LearningTask
 TrainedModel = namedtuple('Model', ['model', 'test_set'])
 
 
-def linear_training_set_size_function(domain_size: int):
-    return domain_size * 50
+def linear_training_set_size_function(input_size: int):
+    return input_size * 50
 
 
 def _create_model(strategy: Strategy,
-                  domain_size: int,
+                  input_size: int,
                   output_values_or_function: Union[List[int], Callable],
                   training_set_size_function: Callable,
                   noise: float) -> TrainedModel:
 
-    simulation_utils = SimulationUtilsFactory.init_utils(strategy, domain_size)
+    simulation_utils = SimulationUtilsFactory.init_utils(strategy, input_size)
     brain = simulation_utils.create_brain(n=10000, k=100, p=0.01, beta=0.05)
 
     sequence = simulation_utils.create_sequence(brain)
@@ -46,7 +46,7 @@ def create_1_to_1_model(output_values_or_function: Union[List[int], Callable], n
         trained_model.model.test_model(trained_model.test_set)
     """
     return _create_model(strategy=Strategy.Layered,
-                         domain_size=1,
+                         input_size=1,
                          output_values_or_function=output_values_or_function,
                          training_set_size_function=linear_training_set_size_function,
                          noise=noise)
@@ -60,24 +60,24 @@ def create_2_to_1_model(output_values_or_function: Union[List[int], Callable], n
         trained_model.model.test_model(trained_model.test_set)
     """
     return _create_model(strategy=Strategy.Layered,
-                         domain_size=2,
+                         input_size=2,
                          output_values_or_function=output_values_or_function,
                          training_set_size_function=linear_training_set_size_function,
                          noise=noise)
 
 
-def create_many_to_1_model(domain_size: int,
+def create_many_to_1_model(input_size: int,
                            output_values_or_function: Union[List[int], Callable],
                            noise=0.) -> TrainedModel:
     """
-    :param domain_size: the size of the model function's domain
+    :param input_size: the size of the model function's input
     :param output_values_or_function: the model's function or its output values list (by order)
     :param noise: the probability of noise (during the learning)
     :return: the trained model and a set to test it with. The proper usage for testing:
         trained_model.model.test_model(trained_model.test_set)
     """
     return _create_model(strategy=Strategy.Simple,
-                         domain_size=domain_size,
+                         input_size=input_size,
                          output_values_or_function=output_values_or_function,
                          training_set_size_function=linear_training_set_size_function,
                          noise=noise)

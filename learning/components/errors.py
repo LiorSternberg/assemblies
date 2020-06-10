@@ -29,7 +29,7 @@ class SequenceRunNotInitialized(Exception):
         return f"The learning sequence instance must be reset before starting to iterate over it"
 
 
-class DomainSizeMismatch(Exception):
+class InputSizeMismatch(Exception):
     def __init__(self, expected_object, actual_object, expected_size: int, actual_size: int) -> None:
         self._expected_object = expected_object
         self._actual_object = actual_object
@@ -37,7 +37,7 @@ class DomainSizeMismatch(Exception):
         self._actual_size = actual_size
 
     def __str__(self) -> str:
-        return f"The domain size of {self._actual_object} is expected to be the same as the domain size of " \
+        return f"The input size of {self._actual_object} is expected to be the same as the input size of " \
                f"{self._expected_object} ({self._expected_size}), but instead it's of size {self._actual_size}"
 
 

@@ -58,7 +58,7 @@ class TrainingSet(PartialDataSet):
         self._inner_index = -1
 
     def _get_training_indices(self):
-        return [index for index in range(2 ** self.domain_size) if self._mask.in_training_set(index)]
+        return [index for index in range(2 ** self.input_size) if self._mask.in_training_set(index)]
 
     def _increment_inner_index(self):
         self._inner_index = (self._inner_index + 1) % (len(self._shuffled_indices))

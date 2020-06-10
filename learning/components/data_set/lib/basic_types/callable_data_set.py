@@ -13,13 +13,13 @@ class CallableDataSet(IndexedDataSet):
     and f(x, y) = (x + y) % 2, appropriate Callables for example are
     lambda x: x and lambda x: bin(x)[2:].count('1') % 2 (respectively).
     Importantly, the inputs of the Callable are considered to be integers from
-    the interval [0, 2^domain_size-1].
+    the interval [0, 2^input_size-1].
     """
-    def __init__(self, function, domain_size, noise_probability=0.) -> None:
+    def __init__(self, function, input_size, noise_probability=0.) -> None:
         super().__init__(noise_probability=noise_probability)
         self._validate_function(function)
         self._function = function
-        self._domain_size = domain_size
+        self._input_size = input_size
 
     @staticmethod
     def _validate_function(function):
@@ -28,11 +28,11 @@ class CallableDataSet(IndexedDataSet):
             raise InvalidFunctionError(len(sig.parameters))
 
     @property
-    def domain_size(self):
-        return self._domain_size
+    def input_size(self):
+        return self._input_size
 
     def _next(self) -> DataPoint:
-        if self._value == 2 ** self._domain_size - 1:
+        if self._value == 2 ** self._input_size - 1:
             self.reset()
             raise StopIteration()
 

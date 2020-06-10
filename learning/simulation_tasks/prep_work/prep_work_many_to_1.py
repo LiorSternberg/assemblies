@@ -23,7 +23,7 @@ class PrepWork:
         self._brain = self._construct_brain(dimension)
         self._outputs_list = [func_to_learn(i) for i in range(2**dimension)]
         self._data_set = create_data_set_from_callable(function=func_to_learn,
-                                                       domain_size=dimension,
+                                                       input_size=dimension,
                                                        noise_probability=0)
         self._training_set = self._create_training_set(self._outputs_list, dimension, training_set_size_func)
         self._training_results = [HEADERS]
@@ -48,7 +48,7 @@ class PrepWork:
         return tuple(int(bit) for bit in self._binary(input_value))
 
     def _binary(self, input_value):
-        return bin(input_value)[2:].zfill(self._data_set.domain_size)
+        return bin(input_value)[2:].zfill(self._data_set.input_size)
 
     def _fire(self, brain: NonLazyBrain, input_value, brain_mode):
         stim_to_area = {f's{bit}_{value}': ['A']
