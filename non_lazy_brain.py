@@ -150,7 +150,7 @@ class NonLazyBrain(Brain):
         if self.learning_mode != BrainLearningMode.FORCE_DESIRED_OUTPUT or not isinstance(area, OutputArea):
             area._new_winners = heapq.nlargest(area.k, list(range(len(inputs))), inputs.__getitem__)
         else:
-            area._new_winners = area.desired_output
+            area._new_winners = area.desired_output  # For purposes of learning
         num_first_winners: int = 0
         for winner in area._new_winners:
             if not area.support[winner]:
@@ -190,6 +190,6 @@ class NonLazyBrain(Brain):
         """
         inputs = self.project_into_calculate_inputs(area, from_stimuli, from_areas)
         num_first_winners = self.project_into_calculate_winners(area, inputs)
-        if self.learning_mode != BrainLearningMode.PLASTICITY_OFF:
+        if self.learning_mode != BrainLearningMode.PLASTICITY_OFF:  # the connectomes should not update when we wish the look at a frozen "snapshot" of the brain (e.g., to assess whether it had succeeded in learning something)
             self.project_into_update_connectomes(area, from_stimuli, from_areas)
         return num_first_winners

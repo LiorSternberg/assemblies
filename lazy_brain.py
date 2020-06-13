@@ -207,7 +207,7 @@ class LazyBrain(Brain):
             if self.learning_mode != BrainLearningMode.FORCE_DESIRED_OUTPUT or not isinstance(area, OutputArea):
                 new_winner_indices = heapq.nlargest(area.k, list(range(len(both))), both.__getitem__)
             else:
-                new_winner_indices = area.desired_output
+                new_winner_indices = area.desired_output  # For purposes of learning
             num_first_winners = 0
             first_winner_inputs = []
             for i in range(area.k):
@@ -273,7 +273,7 @@ class LazyBrain(Brain):
                         first_winner_to_inputs[i][input_index]
                 beta = area.stimulus_beta[stim]
 
-                if self.learning_mode != BrainLearningMode.PLASTICITY_OFF:
+                if self.learning_mode != BrainLearningMode.PLASTICITY_OFF:  # the connectomes should not update when we wish the look at a frozen "snapshot" of the brain (e.g., to assess whether it had succeeded in learning something)
                     # connectomes of winners are now stronger
                     for i in area._new_winners:
                         self.get_stimulus_connectomes(stim, area.name)[i] *= (1 + beta)
