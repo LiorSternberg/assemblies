@@ -4,7 +4,7 @@ from learning.components.data_set.constructors import create_data_set_from_list
 from learning.components.data_set.errors import DataSetSizeError, DataSetValueError
 
 
-class TestCallableDataSet(TestCase):
+class TestListDataSet(TestCase):
     def test_data_set_with_list_of_2_works(self):
         s = create_data_set_from_list([1, 0])
         self.assertEqual(1, s.input_size)

@@ -6,7 +6,7 @@ from tests.test_non_lazy_brain.non_lazy_brain_test_base import NonLazyBrainTestB
 from utils import get_matrix_max, get_matrix_min
 
 
-class TestProject(NonLazyBrainTestBase):
+class TestProjectNonLazy(NonLazyBrainTestBase):
 
     def test_project_from_area_to_itself(self):
         brain = self.utils.create_and_stimulate_brain(number_of_areas=1, number_of_stimulated_areas=1)
@@ -104,24 +104,78 @@ class TestProject(NonLazyBrainTestBase):
             self.assertAlmostEqual(1.0, get_matrix_max(connectome_after_projection[:,0]))
             self.assertAlmostEqual(1.05, get_matrix_max(connectome_after_projection[:,1]))
 
-    @skip('Stimuli->area connectomes are currently implemented as a 2D array instead of 1D')
     def test_project_from_stimulus_to_output_area(self):
-        brain = self.utils.create_brain(number_of_areas=0, add_output_area=True)
+        brain = self.utils.create_brain(number_of_areas=0, add_output_area=True, number_of_stimuli=1, p=1.)
 
         output_area = self.utils.output_area
 
         self.assertEqual([], output_area.winners)
 
+        # test a stimulus that was added AFTER the output area was added to the brain
         stimulus_name = 'stimulus'
-        brain.add_stimulus(stimulus_name, k=self.utils.area_size)
+        brain.add_stimulus(stimulus_name, k=self.utils.stimulus_size)
 
         connectome_before_projection = brain.output_stimuli_connectomes[stimulus_name][output_area.name]
-        self.assertAlmostEqual(1, get_matrix_max(connectome_before_projection))
+        self.assertEqual(0, get_matrix_max(connectome_before_projection))
         self.assertEqual(0, get_matrix_min(connectome_before_projection))
 
         brain.project(area_to_area={}, stim_to_area={stimulus_name: [output_area.name]})
 
         connectome_after_projection = brain.output_stimuli_connectomes[stimulus_name][output_area.name]
         self.assertEqual(output_area.k, len(output_area.winners))
-        self.assertNotAlmostEqual(1, get_matrix_max(connectome_after_projection))
+        self.assertEqual(0, get_matrix_max(connectome_after_projection))
         self.assertEqual(0, get_matrix_min(connectome_after_projection))
+
+        # test a stimulus that was added BEFORE the output area was added to the brain
+        stimulus_name = 'A'
+        connectome_before_projection = brain.output_stimuli_connectomes[stimulus_name][output_area.name]
+        self.assertEqual(0, get_matrix_max(connectome_before_projection))
+        self.assertEqual(0, get_matrix_min(connectome_before_projection))
+
+        brain.project(area_to_area={}, stim_to_area={stimulus_name: [output_area.name]})
+
+        connectome_after_projection = brain.output_stimuli_connectomes[stimulus_name][output_area.name]
+        self.assertEqual(output_area.k, len(output_area.winners))
+        self.assertEqual(0, get_matrix_max(connectome_after_projection))
+        self.assertEqual(0, get_matrix_min(connectome_after_projection))
+
+    def test_project_from_area_to_output_area_when_output_area_added_first(self):
+        brain = self.utils.create_brain(number_of_areas=0, number_of_stimuli=1, add_output_area=True, p=1.)
+        output_area = self.utils.output_area
+
+        self.assertEqual([], output_area.winners)
+
+        area_name = 'new_area'
+        brain.add_area(area_name, n=self.utils.area_size, k=self.utils.winners_size, beta=self.utils.beta)
+        # Stimulate area before projecting to the output area
+        brain.project(area_to_area={}, stim_to_area={'A': [area_name]})
+
+        connectome_before_projection = brain.output_connectomes[area_name][output_area.name]
+        self.assertEqual(1, get_matrix_max(connectome_before_projection))
+        self.assertEqual(1, get_matrix_min(connectome_before_projection))
+
+        brain.project(area_to_area={area_name: [output_area.name]}, stim_to_area={})
+
+        connectome_after_projection = brain.output_connectomes[area_name][output_area.name]
+        self.assertEqual(output_area.k, len(output_area.winners))
+        self.assertAlmostEqual((1 + OutputArea.beta), get_matrix_max(connectome_after_projection))
+        self.assertEqual(1, get_matrix_min(connectome_after_projection))
+
+    def test_project_from_area_to_output_area_when_area_added_first(self):
+        brain = self.utils.create_and_stimulate_brain(number_of_areas=1, number_of_stimulated_areas=1,
+                                                      add_output_area=True, p=1.)
+        output_area = self.utils.output_area
+
+        self.assertEqual([], output_area.winners)
+
+        area_name = 'A'
+        connectome_before_projection = brain.output_connectomes[area_name][output_area.name]
+        self.assertEqual(1, get_matrix_max(connectome_before_projection))
+        self.assertEqual(1, get_matrix_min(connectome_before_projection))
+
+        brain.project(area_to_area={area_name: [output_area.name]}, stim_to_area={})
+
+        connectome_after_projection = brain.output_connectomes[area_name][output_area.name]
+        self.assertEqual(output_area.k, len(output_area.winners))
+        self.assertAlmostEqual((1 + OutputArea.beta), get_matrix_max(connectome_after_projection))
+        self.assertEqual(1, get_matrix_min(connectome_after_projection))

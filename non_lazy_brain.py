@@ -88,7 +88,7 @@ class NonLazyBrain(Brain):
         # self.connectomes[area.name][other_area] = neurons: ndarray (of size (area.n, other_area.n))
         # ndarray[i][j] = weight of connectome from neuron i (in area) to neuron j (in other area)
         name = area.name
-        for stim_name, stim_connectomes in self.stimuli_connectomes.items():
+        for stim_name, stim_connectomes in self.output_stimuli_connectomes.items():
             stimulus: Stimulus = self.stimuli[stim_name]
             stim_connectomes[name] = np.zeros((stimulus.k, area.n), dtype='f')
             self.output_areas[name].stimulus_beta[stim_name] = beta
@@ -109,7 +109,7 @@ class NonLazyBrain(Brain):
 
         new_connectomes: Dict[str, ndarray] = {}
         for area_name, area in self.output_areas.items():
-            new_connectomes[area_name] = np.random.binomial(1, self.p, (stimulus.k, area.n)).astype(dtype='f')
+            new_connectomes[area_name] = np.zeros((stimulus.k, area.n), dtype='f')
             self.output_areas[area_name].stimulus_beta[name] = self.output_areas[area_name].beta
         self.output_stimuli_connectomes[name] = new_connectomes
 
