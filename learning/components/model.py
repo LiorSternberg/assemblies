@@ -9,10 +9,7 @@ from learning.components.data_set.data_set import DataSet
 from learning.components.errors import InputSizeMismatch, InputStimuliAndSequenceMismatch
 from learning.components.input import InputStimuli
 from learning.components.sequence import LearningSequence
-
-TestResults = namedtuple('TestResults', ['accuracy',
-                                         'true_positive',
-                                         'false_negative'])
+from learning.components.test_results import TestResults
 
 
 class LearningModel:
@@ -57,38 +54,27 @@ class LearningModel:
         number_of_sequence_cycles = number_of_sequence_cycles or LearningConfigurations.NUMBER_OF_TRAINING_CYCLES
 
         for data_point in training_set:
-            self._run_learning_projection(input_number=data_point.input,
-                                          brain_mode=BrainLearningMode.FORCE_DESIRED_OUTPUT,
-                                          desired_output=data_point.output,
-                                          number_of_sequence_cycles=number_of_sequence_cycles)
+            self._run_sequence(input_number=data_point.input,
+                               brain_mode=BrainLearningMode.FORCE_DESIRED_OUTPUT,
+                               desired_output=data_point.output,
+                               number_of_sequence_cycles=number_of_sequence_cycles)
 
-    # TODO: Perhaps change the return value here to be a dict mapping DataSet elements to result of model prediction.
-    #       TestResults can be a class managing that dict and supplying `accuracy`, `precision` and `recall`,
-    #       these can be attribute functions.
-    #       precision is #true_positives/#positives. recall is #true_positives/(#true_positive+#false_negatives)
     def test_model(self, test_set: DataSet) -> TestResults:
         """
         Given a test set, this function runs the model on the data points' inputs - and compares it to the expected
         output. It later saves the percentage of the matching runs
         :param test_set: the set by which to test the model's accuracy
-        :return: the model's accuracy
+        :return: the model's test results.
         """
         if test_set.input_size != self._input_size:
             raise InputSizeMismatch('Learning model InputStimuli', 'Test set', self._input_size, test_set.input_size)
 
-        true_positive = []
-        false_negative = []
+        test_results = TestResults()
         for data_point in test_set:
-            if self.run_model(data_point.input) == int(data_point.output):
-                true_positive.append(data_point.input)
-            else:
-                false_negative.append(data_point.input)
+            predicted_output = self.run_model(data_point.input)
+            test_results.add_result(data_point, predicted_output)
 
-        accuracy = round(len(true_positive) / (len(true_positive) + len(false_negative)), 2)
-        # TODO change true negative / false negative labels, since it doesn't make sense
-        return TestResults(accuracy=accuracy,
-                           true_positive=true_positive,
-                           false_negative=false_negative)
+        return test_results
 
     def run_model(self, input_number: int) -> int:
         """
@@ -99,12 +85,11 @@ class LearningModel:
         """
         self._validate_input_number(input_number)
 
-        self._run_learning_projection(input_number, brain_mode=BrainLearningMode.PLASTICITY_OFF)
+        self._run_sequence(input_number, brain_mode=BrainLearningMode.PLASTICITY_OFF)
         return self.output_area.winners[0]
 
-    # TODO: rename as this is not only for learning/training. Maybe _run_sequence? something like this possible
-    def _run_learning_projection(self, input_number: int, brain_mode: BrainLearningMode, desired_output=None,
-                                 number_of_sequence_cycles=1) -> None:
+    def _run_sequence(self, input_number: int, brain_mode: BrainLearningMode, desired_output=None,
+                      number_of_sequence_cycles=1) -> None:
         """
         Running the unsupervised and supervised learning according to the configured sequence, i.e., setting up the
         connections between the areas of the brain (listed in the sequence), according to the activated stimuli

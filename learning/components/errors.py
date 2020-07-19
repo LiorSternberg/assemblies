@@ -24,9 +24,11 @@ class ItemNotInitialized(Exception):
         return f"{self._item_name} must be initialized first"
 
 
-class SequenceRunNotInitialized(Exception):
+class SequenceRunNotInitializedOrInMidRun(Exception):
     def __str__(self) -> str:
-        return f"The learning sequence instance must be reset before starting to iterate over it"
+        return f"The learning sequence instance must be reset before starting to iterate over it " \
+               f"(it is either not initialized yet, or was being iterated and stopped before the " \
+               f"iteration could terminate properly)."
 
 
 class InputSizeMismatch(Exception):

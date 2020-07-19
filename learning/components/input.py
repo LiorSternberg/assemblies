@@ -17,9 +17,15 @@ class InputBitStimuli:
     An object representing a pair of stimuli which match a specific bit in the input,
     and which are meant to fire into a certain set of brain areas.
     """
-    # TODO: Add doc to explain args
     def __init__(self, stimulus_for_0: str, stimulus_for_1: str, target_areas: List[str]) -> None:
-        # TODO: super = Object??
+        """
+        :param stimulus_for_0: The name of the stimulus representing a '0' input
+        for the relevant bit of the input.
+        :param stimulus_for_1: The name of the stimulus representing a '1' input
+        for the relevant bit of the input.
+        :param target_areas: the target areas that the input bit stimuli should
+        be allowed to fire to. Used for validations.
+        """
         super().__init__()
         self._stimulus_for_0 = stimulus_for_0
         self._stimulus_for_1 = stimulus_for_1
@@ -104,7 +110,6 @@ class InputStimuli:
                 5: (__s_A_B_C_0, __s_A_B_C_1) -> ['A', 'B', 'C']
             })>
         """
-        # TODO: super?
         super().__init__()
         self._input_bits: List[InputBitStimuli] = self._generate_input_bits(brain, stimulus_k, area_names, override)
         if verbose:

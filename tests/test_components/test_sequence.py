@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from parameterized import parameterized
 
-from learning.components.errors import SequenceRunNotInitialized, IllegalOutputAreasException, NoPathException, \
+from learning.components.errors import SequenceRunNotInitializedOrInMidRun, IllegalOutputAreasException, NoPathException, \
     InputStimuliMisused
 from learning.components.input import InputStimuli
 from learning.components.sequence import LearningSequence
@@ -452,7 +452,7 @@ class TestLearningSequence(TestCase):
         sequence.add_iteration(areas_to_areas={'C': ['output']})
 
         # Iterating without initializing raises an error
-        with self.assertRaises(SequenceRunNotInitialized):
+        with self.assertRaises(SequenceRunNotInitializedOrInMidRun):
             for iteration in sequence:
                 self.assertIsNotNone(iteration)
 
@@ -462,6 +462,6 @@ class TestLearningSequence(TestCase):
             break
 
         # Iterating again without re-initializing raises an error
-        with self.assertRaises(SequenceRunNotInitialized):
+        with self.assertRaises(SequenceRunNotInitializedOrInMidRun):
             for iteration in sequence:
                 self.assertIsNotNone(iteration)

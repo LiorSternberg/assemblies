@@ -23,7 +23,7 @@ def _create_model(strategy: Strategy,
     brain = simulation_utils.create_brain(n=10000, k=100, p=0.01, beta=0.05)
 
     sequence = simulation_utils.create_sequence(brain)
-    sequence.display()
+    sequence.display_connections_graph()
     input_stimuli = simulation_utils.create_input_stimuli(brain, k=100)
     training_set = simulation_utils.create_training_set(output_values_or_function, training_set_size_function, noise)
 

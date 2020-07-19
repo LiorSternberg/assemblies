@@ -13,13 +13,6 @@ class DataSet(metaclass=ABCMeta):
     based on a binary function, such as f(x) =  x (identity) or f(x, y) = (x + y) % 2.
     """
     @abstractmethod
-    def set_noise_probability(self, noise_probability):
-        """
-        Set the noise probability of the data set to a new value.
-        """
-        pass
-
-    @abstractmethod
     def __iter__(self):
         pass
 

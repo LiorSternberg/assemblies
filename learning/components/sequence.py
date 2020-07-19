@@ -1,92 +1,79 @@
-from collections import defaultdict
-from copy import deepcopy
+from enum import Enum
 from itertools import chain
-from typing import List, Union, Dict, Tuple
-
-import matplotlib.pyplot as plt
-from networkx import DiGraph, has_path, draw, draw_networkx_edge_labels, get_node_attributes, get_edge_attributes
+from typing import List, Dict, Optional, Callable, Union
 
 from brain import Brain, Area, OutputArea
-from learning.components.errors import MissingArea, SequenceRunNotInitialized, NoPathException, \
-    IllegalOutputAreasException, SequenceFinalizationError, MissingStimulus, InputStimuliMisused
-from learning.components.input import InputStimuli
+from learning.components.errors import MissingArea, SequenceRunNotInitializedOrInMidRun, SequenceFinalizationError, \
+    MissingStimulus
+from learning.components.sequence_components.connections_graph import ConnectionsGraph
+from learning.components.sequence_components.iteration import Iteration
+from learning.components.sequence_components.iteration_configuration import IterationConfiguration
 
 
-# TODO: Document this class. What are runs? iterations? what is the graph? how to use this?
+class SourceType(Enum):
+    """
+    Possible source types for the projections in a sequence.
+    """
+    STIMULUS = 'stimulus'
+    INPUT_BIT = 'input-bit'
+    AREA = 'area'
+
+
 class LearningSequence:
+    """
+    The learning sequence represent a sequence of projections used for the
+    learning process (either at the training or the test stage). it defines the
+    order of projections, and the number of their repetitions.
 
-    class Iteration:
-        # TODO: document this class
-        def __init__(self, stimuli_to_areas: Dict[str, List[str]] = None, input_bits_to_areas: Dict[int, List[str]] = None,
-                     areas_to_areas: Dict[str, List[str]] = None, consecutive_runs: int = 1):
-            self.areas_to_areas = areas_to_areas or {}
-            self.stimuli_to_areas = stimuli_to_areas or {}
-            self.input_bits_to_areas = input_bits_to_areas or {}
-            self.consecutive_runs = consecutive_runs
+    Note that the sequence is validated to ensure that there is only one
+    output, and that each input is eventually connected to the output area.
 
-        @staticmethod
-        def _to_bits(input_value: int, size: int) -> Tuple[int, ...]:
-            return tuple(int(bit) for bit in bin(input_value)[2:].zfill(size))
-
-        def format(self, input_stimuli: InputStimuli, input_value: int) -> dict:
-            """
-            Converting the Iteration object into project parameters, using the input definition
-            (the InputStimuli object) and the current input value.
-            :param input_stimuli: the InputStimuli object which defines the mapping between input bits and pairs of
-            stimuli (one for each possible value of the bit).
-            :param input_value: the input value as a base 10 integer (for example, for the input 101, use 5).
-            """
-            input_value = self._to_bits(input_value, len(input_stimuli))
-            stimuli_to_area = defaultdict(list, deepcopy(self.stimuli_to_areas))
-            for bit_index, area_names in self.input_bits_to_areas.items():
-                if sorted(input_stimuli[bit_index].target_areas) != sorted(area_names):
-                    raise InputStimuliMisused(bit_index, input_stimuli[bit_index].target_areas, area_names)
-
-                bit_value = input_value[bit_index]
-                stimulus_name = input_stimuli[bit_index][bit_value]
-                stimuli_to_area[stimulus_name] += area_names
-
-            return dict(stim_to_area=dict(stimuli_to_area),
-                        area_to_area=self.areas_to_areas)
-
-    class IterationConfiguration:
-        # TODO: document
-        def __init__(self, current_cycle: int, current_iter: int, current_run: int,
-                     number_of_cycles: Union[int, float]):
-            self.current_cycle = current_cycle
-            self.current_iter = current_iter
-            self.current_run = current_run
-            self.number_of_cycles = number_of_cycles
-
-            self.activated = False
-
+    Also, after the sequence is created, it allows the user to generate a
+    connections graph representing the projections in the sequence.
+    """
     def __init__(self, brain: Brain):
         """
+        Create a new empty sequence.
+
+        Once created, you can add iterations to it, and eventually finalize it
+        to indicate it is ready and should be validated (and that no new
+        iterations will added).
+
         :param brain: the brain object
         """
         self._brain = brain
-        # TODO: perhaps make a new class inherited from DiGraph?
-        #       it feels a bit unnatural to have LearningSequence._add_edge.
+
         # Representing the given sequence as a graph, for connectivity checking
-        self._connections_graph = DiGraph()
+        self._connections_graph = ConnectionsGraph()
 
-        self._iterations: List[LearningSequence.Iteration] = []
-        # TODO: Perhaps use a non-activated instance of IterationConfiguration instead of None
-        self._configuration: Union[LearningSequence.IterationConfiguration, None] = None
+        self._iterations: List[Iteration] = []
+        self._configuration: Optional[IterationConfiguration] = None
 
-        # TODO: Later it is used as self.output_area!
-        self._output_area = None
-        self._finalized = False
+        self._output_area: Optional[OutputArea] = None
+        self._finalized: bool = False
+
+    @property
+    def number_of_iterations(self) -> int:
+        """
+        Returns the number of iterations currently in the sequence.
+        """
+        return len(self._iterations)
+
+    @property
+    def output_area(self) -> OutputArea:
+        """
+        Returns the output area of the sequence.
+        """
+        return self._output_area
 
     def __iter__(self):
-        if self._configuration is None or self._configuration.activated:
-            raise SequenceRunNotInitialized()
+        if self._configuration is None or self._configuration.is_in_mid_run:
+            raise SequenceRunNotInitializedOrInMidRun()
         return self
 
     def __next__(self):
-        # TODO: missing config.active. this is the problem with multiple context indicators
         if self._configuration is None:
-            raise SequenceRunNotInitialized()
+            raise SequenceRunNotInitializedOrInMidRun()
 
         self._configuration.current_run += 1
         if self._configuration.current_run >= self._iterations[self._configuration.current_iter].consecutive_runs:
@@ -94,39 +81,40 @@ class LearningSequence:
             self._configuration.current_run = 0
             self._configuration.current_iter += 1
 
-            if self._configuration.current_iter >= len(self._iterations):
+            if self._configuration.current_iter >= self.number_of_iterations:
                 # Moving to the next cycle
                 self._configuration.current_cycle += 1
                 self._configuration.current_iter = 0
 
                 if self._configuration.current_cycle >= self._configuration.number_of_cycles:
                     # Number of cycles exceeded
+                    self._configuration.is_in_mid_run = False
                     raise StopIteration()
 
         current_iteration = self._iterations[self._configuration.current_iter]
-        self._configuration.activated = True
+
+        # Indicate that the iteration started, and must exhausted or reset
+        # (by initializing a new run) before starting another iteration.
+        self._configuration.is_in_mid_run = True
+
         return current_iteration
 
-    def finalize_sequence(self):
+    def finalize_sequence(self) -> None:
         """
         finalizing the sequence before initial running. The sequence cannot be edited after that
         """
-        output_area = self._verify_single_output_area()
-        self.output_area = self._brain.output_areas[output_area]
-        self._verify_input_bits_are_connected_to_output()
-        self._verify_stimuli_are_connected_to_output()
+        output_area = self._connections_graph.verify_single_output_area()
+        self._output_area = self._brain.output_areas[output_area]
+        self._connections_graph.verify_inputs_are_connected_to_output()
 
-    def initialize_run(self, number_of_cycles=float('inf')):
+    def initialize_run(self, number_of_cycles=float('inf')) -> None:
         """
         Setting up the running of the sequence iterations
         :param number_of_cycles: the number of full cycles (of all defined iterations) that should be run consecutively
         """
         if not self._finalized:
             self.finalize_sequence()
-        self._configuration = self.IterationConfiguration(current_cycle=0,
-                                                          current_iter=0,
-                                                          current_run=-1,
-                                                          number_of_cycles=number_of_cycles)
+        self._configuration = IterationConfiguration(number_of_cycles=number_of_cycles)
 
     def _verify_stimulus(self, stimulus_name: str) -> None:
         """
@@ -146,8 +134,39 @@ class LearningSequence:
             raise MissingArea(area_name)
         return self._brain.areas.get(area_name, self._brain.output_areas.get(area_name))
 
-    def add_iteration(self, areas_to_areas: Dict[str, List[str]] = None, input_bits_to_areas: Dict[int, List[str]] = None,
-                      stimuli_to_areas: Dict[str, List[str]] = None, consecutive_runs=1):
+    def _validate_and_add_connections(self, source_type: SourceType,
+                                      mapping: Dict[Union[str, int], List[str]],
+                                      consecutive_runs: int,
+                                      source_verification_method: Optional[Callable] = None) -> None:
+        """
+        Validate a source-to-targets mapping for the iteration's projections and add the relevant
+        connections to the connections graph.
+        :param source_type: one of the possible SourceTypes, indicating what kind source nodes
+        should be created for the connections.
+        :param mapping: The source to targets mapping for the iteration projections.
+        :param consecutive_runs: Number of consecutive runs of the iteration, to be used as
+        the weight of the connections.
+        :param source_verification_method: An optional method to verify the source element before
+        adding the connection to the connections graph (used for example to validate a source
+        area actually exists.
+        """
+        for source, target_areas in mapping.items():
+            if source_verification_method:
+                source_verification_method(source)
+
+            source_node = f'{source_type.value}-{source}'
+
+            for target_area in target_areas:
+                area_type = 'output' if isinstance(self._verify_and_get_area(target_area), OutputArea) else 'area'
+                area_node = f'{area_type}-{target_area}'
+
+                self._connections_graph.add_connection(source_node, area_node, consecutive_runs,
+                                                       self.number_of_iterations)
+
+    def add_iteration(self, areas_to_areas: Dict[str, List[str]] = None,
+                      input_bits_to_areas: Dict[int, List[str]] = None,
+                      stimuli_to_areas: Dict[str, List[str]] = None,
+                      consecutive_runs: int = 1) -> None:
         """
         Adding an iteration to the learning sequence, consisting of firing stimuli/areas and fired-at areas/output areas
         :param stimuli_to_areas: a mapping between a stimulus and the areas/output areas it fires to
@@ -159,117 +178,22 @@ class LearningSequence:
         if self._finalized:
             raise SequenceFinalizationError()
 
-        # TODO: The following should belong to its own function to avoid code duplication and be more flexible.
         if stimuli_to_areas:
-            for source_stimulus, target_areas in stimuli_to_areas.items():
-                self._verify_stimulus(source_stimulus)
-
-                stimulus_node = f'stimulus-{source_stimulus}'
-
-                for target_area in target_areas:
-                    area_type = 'output' if isinstance(self._verify_and_get_area(target_area), OutputArea) else 'area'
-                    area_node = f'{area_type}-{target_area}'
-
-                    self._add_edge(stimulus_node, area_node, consecutive_runs)
+            self._validate_and_add_connections(SourceType.STIMULUS, stimuli_to_areas, consecutive_runs,
+                                               self._verify_stimulus)
 
         if input_bits_to_areas:
-            for source_input_bit, target_areas in input_bits_to_areas.items():
-                input_bit_node = f'input-bit-{source_input_bit}'
-
-                for target_area in target_areas:
-                    area_type = 'output' if isinstance(self._verify_and_get_area(target_area), OutputArea) else 'area'
-                    area_node = f'{area_type}-{target_area}'
-
-                    self._add_edge(input_bit_node, area_node, consecutive_runs)
+            self._validate_and_add_connections(SourceType.INPUT_BIT, input_bits_to_areas, consecutive_runs)
 
         if areas_to_areas:
-            for source_area, target_areas in areas_to_areas.items():
-                self._verify_and_get_area(source_area)
+            self._validate_and_add_connections(SourceType.AREA, areas_to_areas, consecutive_runs,
+                                               self._verify_and_get_area)
 
-                source_area_node = f'area-{source_area}'
-
-                for target_area in target_areas:
-                    area_type = 'output' if isinstance(self._verify_and_get_area(target_area), OutputArea) else 'area'
-                    target_area_node = f'{area_type}-{target_area}'
-
-                    self._add_edge(source_area_node, target_area_node, consecutive_runs)
-
-        new_iteration = self.Iteration(stimuli_to_areas=stimuli_to_areas,
-                                       input_bits_to_areas=input_bits_to_areas,
-                                       areas_to_areas=areas_to_areas,
-                                       consecutive_runs=consecutive_runs)
+        new_iteration = Iteration(stimuli_to_areas=stimuli_to_areas,
+                                  input_bits_to_areas=input_bits_to_areas,
+                                  areas_to_areas=areas_to_areas,
+                                  consecutive_runs=consecutive_runs)
         self._iterations.append(new_iteration)
 
-    def _add_edge(self, source_node, target_node, weight):
-        """
-        Adding an edge to the sequence Graph
-        """
-        existing_horizontal_positions = max([position[1] for position in get_node_attributes(
-            self._connections_graph, 'position').values()]) if self._connections_graph.nodes else 0
-        horizontal_index = min(len(self._iterations), existing_horizontal_positions)
-
-        if not self._connections_graph.has_node(source_node):
-            vertical_index = len([position for position in get_node_attributes(
-                self._connections_graph, 'position').values() if position[1] == horizontal_index])
-            self._connections_graph.add_node(source_node, position=(vertical_index, horizontal_index))
-
-        if not self._connections_graph.has_node(target_node):
-            vertical_index = len([position for position in get_node_attributes(
-                self._connections_graph, 'position').values() if position[1] == horizontal_index + 1])
-            self._connections_graph.add_node(target_node, position=(vertical_index, horizontal_index + 1))
-
-        if self._connections_graph.has_edge(source_node, target_node):
-            # Adding to the previous edge weight
-            weight += self._connections_graph.get_edge_data(source_node, target_node)['weight']
-
-        self._connections_graph.add_edge(source_node, target_node, weight=weight)
-
-    # TODO: This is not necessary, perhaps only check this where there is one output area.
-    #       Actually, I don't understand why stimuli which aren't input need to be checked.
-    def _verify_stimuli_are_connected_to_output(self):
-        """
-        Checking that there is a directed path of projection between each stimulus and each output area.
-        In case one doesn't exist, this function raises an exception
-        """
-        stimuli = [node for node in self._connections_graph.nodes if node.startswith('stimulus')]
-        output_areas = [node for node in self._connections_graph.nodes if node.startswith('output')]
-
-        for stimulus in stimuli:
-            for area in output_areas:
-                if not has_path(self._connections_graph, stimulus, area):
-                    raise NoPathException(stimulus[9:], area[7:])
-
-    # TODO: Perhaps merge this with previous function?
-    def _verify_input_bits_are_connected_to_output(self):
-        """
-        Checking that there is a directed path of projection between each input bit and each output area.
-        In case one doesn't exist, this function raises an exception
-        """
-        input_bits = [node for node in self._connections_graph.nodes if node.startswith('input-bit')]
-        output_areas = [node for node in self._connections_graph.nodes if node.startswith('output')]
-
-        for input_bit in input_bits:
-            for area in output_areas:
-                if not has_path(self._connections_graph, input_bit, area):
-                    raise NoPathException(input_bit[10:], area[7:])
-
-    # TODO: return value is used - explain in documentation and type hints
-    def _verify_single_output_area(self):
-        """
-        Checking that there is a single output area in the sequence. In any other case (none or multiple output areas),
-        this function raises an exception
-        """
-        output_areas = [node[7:] for node in self._connections_graph.nodes if node.startswith('output')]
-        if len(output_areas) != 1:
-            raise IllegalOutputAreasException(output_areas)
-        return output_areas[0]
-
-    def display(self):
-        """
-        Displaying the sequence graph
-        """
-        node_positions = get_node_attributes(self._connections_graph, 'position')
-        edge_labels = get_edge_attributes(self._connections_graph, 'weight')
-        draw(self._connections_graph, pos=node_positions, alpha=1, with_labels=True)
-        draw_networkx_edge_labels(self._connections_graph, node_positions, edge_labels=edge_labels)
-        plt.show()
+    def display_connections_graph(self):
+        self._connections_graph.display()
