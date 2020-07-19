@@ -62,6 +62,10 @@ class LearningModel:
                                           desired_output=data_point.output,
                                           number_of_sequence_cycles=number_of_sequence_cycles)
 
+    # TODO: Perhaps change the return value here to be a dict mapping DataSet elements to result of model prediction.
+    #       TestResults can be a class managing that dict and supplying `accuracy`, `precision` and `recall`,
+    #       these can be attribute functions.
+    #       precision is #true_positives/#positives. recall is #true_positives/(#true_positive+#false_negatives)
     def test_model(self, test_set: DataSet) -> TestResults:
         """
         Given a test set, this function runs the model on the data points' inputs - and compares it to the expected
@@ -98,6 +102,7 @@ class LearningModel:
         self._run_learning_projection(input_number, brain_mode=BrainLearningMode.PLASTICITY_OFF)
         return self.output_area.winners[0]
 
+    # TODO: rename as this is not only for learning/training. Maybe _run_sequence? something like this possible
     def _run_learning_projection(self, input_number: int, brain_mode: BrainLearningMode, desired_output=None,
                                  number_of_sequence_cycles=1) -> None:
         """

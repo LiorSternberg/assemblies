@@ -12,9 +12,11 @@ from learning.components.errors import MissingArea, SequenceRunNotInitialized, N
 from learning.components.input import InputStimuli
 
 
+# TODO: Document this class. What are runs? iterations? what is the graph? how to use this?
 class LearningSequence:
 
     class Iteration:
+        # TODO: document this class
         def __init__(self, stimuli_to_areas: Dict[str, List[str]] = None, input_bits_to_areas: Dict[int, List[str]] = None,
                      areas_to_areas: Dict[str, List[str]] = None, consecutive_runs: int = 1):
             self.areas_to_areas = areas_to_areas or {}
@@ -48,6 +50,7 @@ class LearningSequence:
                         area_to_area=self.areas_to_areas)
 
     class IterationConfiguration:
+        # TODO: document
         def __init__(self, current_cycle: int, current_iter: int, current_run: int,
                      number_of_cycles: Union[int, float]):
             self.current_cycle = current_cycle
@@ -62,12 +65,16 @@ class LearningSequence:
         :param brain: the brain object
         """
         self._brain = brain
+        # TODO: perhaps make a new class inherited from DiGraph?
+        #       it feels a bit unnatural to have LearningSequence._add_edge.
         # Representing the given sequence as a graph, for connectivity checking
         self._connections_graph = DiGraph()
 
         self._iterations: List[LearningSequence.Iteration] = []
+        # TODO: Perhaps use a non-activated instance of IterationConfiguration instead of None
         self._configuration: Union[LearningSequence.IterationConfiguration, None] = None
 
+        # TODO: Later it is used as self.output_area!
         self._output_area = None
         self._finalized = False
 
@@ -77,6 +84,7 @@ class LearningSequence:
         return self
 
     def __next__(self):
+        # TODO: missing config.active. this is the problem with multiple context indicators
         if self._configuration is None:
             raise SequenceRunNotInitialized()
 
@@ -151,6 +159,7 @@ class LearningSequence:
         if self._finalized:
             raise SequenceFinalizationError()
 
+        # TODO: The following should belong to its own function to avoid code duplication and be more flexible.
         if stimuli_to_areas:
             for source_stimulus, target_areas in stimuli_to_areas.items():
                 self._verify_stimulus(source_stimulus)
@@ -215,6 +224,8 @@ class LearningSequence:
 
         self._connections_graph.add_edge(source_node, target_node, weight=weight)
 
+    # TODO: This is not necessary, perhaps only check this where there is one output area.
+    #       Actually, I don't understand why stimuli which aren't input need to be checked.
     def _verify_stimuli_are_connected_to_output(self):
         """
         Checking that there is a directed path of projection between each stimulus and each output area.
@@ -228,6 +239,7 @@ class LearningSequence:
                 if not has_path(self._connections_graph, stimulus, area):
                     raise NoPathException(stimulus[9:], area[7:])
 
+    # TODO: Perhaps merge this with previous function?
     def _verify_input_bits_are_connected_to_output(self):
         """
         Checking that there is a directed path of projection between each input bit and each output area.
@@ -241,6 +253,7 @@ class LearningSequence:
                 if not has_path(self._connections_graph, input_bit, area):
                     raise NoPathException(input_bit[10:], area[7:])
 
+    # TODO: return value is used - explain in documentation and type hints
     def _verify_single_output_area(self):
         """
         Checking that there is a single output area in the sequence. In any other case (none or multiple output areas),

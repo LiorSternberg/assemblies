@@ -114,6 +114,7 @@ class OutputArea(BaseArea):
         super().__init__(name)
         self.support = [1] * OutputArea.n
         self.support_size = OutputArea.n
+        # TODO: It shouldn't be managed here, as in the new interface - can you pass it on as arguments elsewhere?
         self.desired_output = [0] * OutputArea.n  # will be taken to be the winners array
 
 

@@ -14,6 +14,7 @@ class DataSetBase(DataSet, metaclass=ABCMeta):
     based on a binary function, such as f(x) =  x (identity) or f(x, y) = (x + y) % 2.
     This class contains any and all shared logic between different types of DataSets.
     """
+    # TODO: document
     def __init__(self, noise_probability=0.) -> None:
         super().__init__()
         self._noise_probability = noise_probability
