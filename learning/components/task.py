@@ -5,6 +5,7 @@ from learning.components.input import InputStimuli
 from learning.components.sequence import LearningSequence
 from learning.components.model import LearningModel
 
+# TODO: remove this class. I don't think we need to wrap LearningModel
 
 class LearningTask:
 

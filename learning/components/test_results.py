@@ -4,6 +4,8 @@ from typing import List
 from learning.components.data_set.data_point import DataPoint
 
 
+# TODO: Handle case of non-binary return values (can throw non-implemented error)
+
 class ResultType(Enum):
     FALSE_NEGATIVE = auto()
     TRUE_NEGATIVE = auto()
@@ -28,9 +30,6 @@ class _DataPointResult:
 
     def get_result_type(self) -> ResultType:
         """
-        # TODO: for Edo - is this really what you want? We are considering the
-           value of the output as an indication of a negative and positive
-           result?
 
         We will consider the actual model prediction result a an indicator
         whether the output is negative / positive, and the data point's
