@@ -1,14 +1,7 @@
 from collections import defaultdict
 from copy import deepcopy
-from itertools import chain
-from typing import List, Union, Dict, Tuple, Optional
+from typing import List, Dict, Tuple
 
-import matplotlib.pyplot as plt
-from networkx import DiGraph, has_path, draw, draw_networkx_edge_labels, get_node_attributes, get_edge_attributes
-
-from brain import Brain, Area, OutputArea
-from learning.components.errors import MissingArea, SequenceRunNotInitializedOrInMidRun, NoPathException, \
-    IllegalOutputAreasException, SequenceFinalizationError, MissingStimulus, InputStimuliMisused
 from learning.components.input import InputStimuli
 
 
@@ -36,6 +29,13 @@ class Iteration:
     def _to_bits(input_value: int, size: int) -> Tuple[int, ...]:
         return tuple(int(bit) for bit in bin(input_value)[2:].zfill(size))
 
+    @staticmethod
+    def _union(list1: list, list2: list):
+        """
+        Union two lists and remove duplicates.
+        """
+        return sorted(set(list1).union(list2))
+
     def format(self, input_stimuli: InputStimuli, input_value: int) -> dict:
         """
         Converting the Iteration object into project parameters, using the input definition
@@ -47,12 +47,9 @@ class Iteration:
         input_value = self._to_bits(input_value, len(input_stimuli))
         stimuli_to_area = defaultdict(list, deepcopy(self.stimuli_to_areas))
         for bit_index, area_names in self.input_bits_to_areas.items():
-            if sorted(input_stimuli[bit_index].target_areas) != sorted(area_names):
-                raise InputStimuliMisused(bit_index, input_stimuli[bit_index].target_areas, area_names)
-
             bit_value = input_value[bit_index]
             stimulus_name = input_stimuli[bit_index][bit_value]
-            stimuli_to_area[stimulus_name] += area_names
+            stimuli_to_area[stimulus_name] = self._union(area_names, stimuli_to_area[stimulus_name])
 
         return dict(stim_to_area=dict(stimuli_to_area),
                     area_to_area=self.areas_to_areas)

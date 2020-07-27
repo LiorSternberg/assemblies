@@ -10,6 +10,8 @@ from learning.components.data_set.lib.test_set import TestSet as _TestSet
 from learning.components.data_set.lib.training_set import TrainingSet as _TrainingSet
 from learning.components.data_set.mask import Mask
 
+DEFAULT_MULTI_FACTOR = 5
+
 
 def create_data_set_from_callable(
         function: Callable[[int], int],
@@ -264,8 +266,8 @@ def create_training_and_test_sets_from_list(
 def create_training_set_from_callable(
         data_set_function: Callable[[int], int],
         input_size: int,
-        mask: Mask,
-        training_set_length: int,
+        mask: Mask = None,
+        training_set_length: int = None,
         noise_probability: float = 0.) -> DataSet:
     """
     Simplified way to create a training set from a function (a python callable).
@@ -302,6 +304,11 @@ def create_training_set_from_callable(
     >>> for data_point in training_set:
     ...  print(data_point.input, data_point.output)
     """
+    if mask is None:  # use a full mask by default
+        mask = create_explicit_mask_from_callable(lambda x: 1)
+
+    if training_set_length is None:
+        training_set_length = (2 ** input_size) * DEFAULT_MULTI_FACTOR
 
     base_data_set = create_data_set_from_callable(data_set_function, input_size, noise_probability)
     return _TrainingSet(base_data_set, mask, training_set_length, noise_probability)
@@ -310,7 +317,7 @@ def create_training_set_from_callable(
 def create_test_set_from_callable(
         data_set_function: Callable[[int], int],
         input_size: int,
-        mask: Mask) -> DataSet:
+        mask: Mask = None) -> DataSet:
     """
     Simplified way to create a test set from a function (a python callable).
     Note that the function should get one argument, an integer between 0 and
@@ -336,14 +343,17 @@ def create_test_set_from_callable(
     >>> for data_point in test_set:
     ...  print(data_point.input, data_point.output)
     """
+    if mask is None:  # use a full mask by default
+        mask = create_explicit_mask_from_callable(lambda x: 0)
+
     base_data_set = create_data_set_from_callable(data_set_function, input_size)
     return _TestSet(base_data_set, mask)
 
 
 def create_training_set_from_list(
         data_set_return_values: List[int],
-        mask: Mask,
-        training_set_length: int,
+        mask: Mask = None,
+        training_set_length: int = None,
         noise_probability: float = 0.) -> DataSet:
     """
     Simplified way to create a training set from a list of return values
@@ -385,14 +395,21 @@ def create_training_set_from_list(
 
     >>> for data_point in training_set:
     ...  print(data_point.input, data_point.output)
-"""
+    """
+    data_set_size = len(data_set_return_values)
+    if mask is None:  # use a full mask by default
+        mask = create_explicit_mask_from_callable(lambda x: 1)
+
+    if training_set_length is None:
+        training_set_length = data_set_size * DEFAULT_MULTI_FACTOR
+
     base_data_set = create_data_set_from_list(data_set_return_values, noise_probability)
     return _TrainingSet(base_data_set, mask, training_set_length, noise_probability)
 
 
 def create_test_set_from_list(
         data_set_return_values: List[int],
-        mask: Mask) -> DataSet:
+        mask: Mask = None) -> DataSet:
     """
     Simplified way to create a test set from a list of return values
     representing a boolean function. Note that the list should be of length that
@@ -425,5 +442,8 @@ def create_test_set_from_list(
     ...  print(data_point.input, data_point.output)
 
     """
+    if mask is None:  # use a full mask by default
+        mask = create_explicit_mask_from_callable(lambda x: 0)
+
     base_data_set = create_data_set_from_list(data_set_return_values)
     return _TestSet(base_data_set, mask)

@@ -1,15 +1,4 @@
-from collections import defaultdict
-from copy import deepcopy
-from itertools import chain
-from typing import List, Union, Dict, Tuple, Optional
-
-import matplotlib.pyplot as plt
-from networkx import DiGraph, has_path, draw, draw_networkx_edge_labels, get_node_attributes, get_edge_attributes
-
-from brain import Brain, Area, OutputArea
-from learning.components.errors import MissingArea, SequenceRunNotInitializedOrInMidRun, NoPathException, \
-    IllegalOutputAreasException, SequenceFinalizationError, MissingStimulus, InputStimuliMisused
-from learning.components.input import InputStimuli
+from typing import Union
 
 
 class IterationConfiguration:

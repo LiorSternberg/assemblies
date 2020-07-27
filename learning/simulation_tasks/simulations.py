@@ -1,9 +1,9 @@
 from collections import namedtuple
 from typing import List, Callable, Union
 
+from learning.components.model import LearningModel
 from learning.simulation_tasks.strategy import Strategy
 from learning.simulation_tasks.simulation_utils import SimulationUtilsFactory
-from learning.components.task import LearningTask
 
 
 TrainedModel = namedtuple('Model', ['model', 'test_set'])
@@ -22,17 +22,16 @@ def _create_model(strategy: Strategy,
     simulation_utils = SimulationUtilsFactory.init_utils(strategy, input_size)
     brain = simulation_utils.create_brain(n=10000, k=100, p=0.01, beta=0.05)
 
-    sequence = simulation_utils.create_sequence(brain)
-    sequence.display_connections_graph()
     input_stimuli = simulation_utils.create_input_stimuli(brain, k=100)
+    sequence = simulation_utils.create_sequence(brain, input_stimuli)
+    sequence.display_connections_graph()
     training_set = simulation_utils.create_training_set(output_values_or_function, training_set_size_function, noise)
 
-    learning = LearningTask(brain)
-    learning.sequence = sequence
-    learning.training_set = training_set
-    learning.input_stimuli = input_stimuli
+    model = LearningModel(brain=brain,
+                          sequence=sequence,
+                          input_stimuli=input_stimuli)
 
-    model = learning.create_model(number_of_sequence_cycles=1)
+    model.train_model(training_set=training_set, number_of_sequence_cycles=1)
     test_set = simulation_utils.create_test_set(output_values_or_function)
 
     return TrainedModel(model=model, test_set=test_set)
@@ -84,5 +83,5 @@ def create_many_to_1_model(input_size: int,
 
 
 if __name__ == '__main__':
-    model = create_2_to_1_model([0, 1, 1, 0])
-    print(model.model.test_model(model.test_set).accuracy)
+    trained_model = create_2_to_1_model([0, 1, 1, 0])
+    print(trained_model.model.test_model(trained_model.test_set).accuracy)

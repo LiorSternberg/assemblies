@@ -4,7 +4,11 @@ from typing import List
 from learning.components.data_set.data_point import DataPoint
 
 
-# TODO: Handle case of non-binary return values (can throw non-implemented error)
+INPUT_NOT_BINARY_ERROR = "Data point input must be 0 or 1. " \
+                         "Got {} instead, which is not supported."
+OUTPUT_NOT_BINARY_ERROR = "Data point output must be 0 or 1. " \
+                          "Got {} instead, which is not supported."
+
 
 class ResultType(Enum):
     FALSE_NEGATIVE = auto()
@@ -18,6 +22,7 @@ class _DataPointResult:
     Internal class representing a data point and the result the model predicted
     for it.
     """
+
     def __init__(self, data_point: DataPoint, model_prediction_result: int) -> None:
         """
         :param data_point: The data point.
@@ -42,15 +47,27 @@ class _DataPointResult:
             if self.data_point.output == 0:
                 return ResultType.TRUE_NEGATIVE
 
-            else:  # self.data_point.output == 1:
+            elif self.data_point.output == 1:
                 return ResultType.FALSE_NEGATIVE
 
-        else:  # self.model_prediction_result == 1:
+            else:
+                raise NotImplementedError(
+                    OUTPUT_NOT_BINARY_ERROR.format(self.data_point.output))
+
+        elif self.model_prediction_result == 1:
             if self.data_point.output == 0:
                 return ResultType.FALSE_POSITIVE
 
-            else:  # self.data_point.output == 1:
+            elif self.data_point.output == 1:
                 return ResultType.TRUE_POSITIVE
+
+            else:
+                raise NotImplementedError(
+                    OUTPUT_NOT_BINARY_ERROR.format(self.data_point.output))
+
+        else:
+            raise NotImplementedError(
+                INPUT_NOT_BINARY_ERROR.format(self.data_point.input))
 
 
 class TestResults:
@@ -81,17 +98,20 @@ class TestResults:
 
     @property
     def accuracy(self) -> float:
+        assert len(self.results) > 0, "Empty test results"
         correct = self.count_filtered_results(ResultType.TRUE_NEGATIVE, ResultType.TRUE_POSITIVE)
         return round(correct / len(self.results), 2)
 
     @property
     def precision(self) -> float:
+        assert len(self.results) > 0, "Empty test results"
         true_positives = self.count_filtered_results(ResultType.TRUE_POSITIVE)
         predicted_positives = self.count_filtered_results(ResultType.FALSE_POSITIVE, ResultType.TRUE_POSITIVE)
         return round(true_positives / predicted_positives, 2)
 
     @property
     def recall(self) -> float:
+        assert len(self.results) > 0, "Empty test results"
         true_positives = self.count_filtered_results(ResultType.TRUE_POSITIVE)
         actual_positives = self.count_filtered_results(ResultType.FALSE_NEGATIVE, ResultType.TRUE_POSITIVE)
         return round(true_positives / actual_positives, 2)

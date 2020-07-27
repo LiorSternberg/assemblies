@@ -53,17 +53,6 @@ class InputStimuliAndSequenceMismatch(Exception):
                f"is defined for inputs of length {self._input_expected_length}."
 
 
-class InputStimuliMisused(Exception):
-    def __init__(self, input_bit_index, expected_areas, actual_areas) -> None:
-        self._input_bit_index = input_bit_index
-        self._expected_areas = expected_areas
-        self._actual_areas = actual_areas
-
-    def __str__(self) -> str:
-        return f"Input stimuli of bit {self._input_bit_index} was defined to fire to areas {self._expected_areas}. " \
-               f"It cannot be used fire to a different set of areas (attempted firing to {self._actual_areas})."
-
-
 class SequenceFinalizationError(Exception):
 
     def __str__(self) -> str:

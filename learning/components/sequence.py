@@ -5,6 +5,7 @@ from typing import List, Dict, Optional, Callable, Union
 from brain import Brain, Area, OutputArea
 from learning.components.errors import MissingArea, SequenceRunNotInitializedOrInMidRun, SequenceFinalizationError, \
     MissingStimulus
+from learning.components.input import InputStimuli
 from learning.components.sequence_components.connections_graph import ConnectionsGraph
 from learning.components.sequence_components.iteration import Iteration
 from learning.components.sequence_components.iteration_configuration import IterationConfiguration
@@ -31,7 +32,7 @@ class LearningSequence:
     Also, after the sequence is created, it allows the user to generate a
     connections graph representing the projections in the sequence.
     """
-    def __init__(self, brain: Brain):
+    def __init__(self, brain: Brain, input_stimuli: InputStimuli):
         """
         Create a new empty sequence.
 
@@ -40,8 +41,11 @@ class LearningSequence:
         iterations will added).
 
         :param brain: the brain object
+        :param input_stimuli: the input stimuli object defining the mapping
+        between input bits and their representing pair of stimuli.
         """
         self._brain = brain
+        self._input_stimuli = input_stimuli
 
         # Representing the given sequence as a graph, for connectivity checking
         self._connections_graph = ConnectionsGraph()
@@ -163,14 +167,23 @@ class LearningSequence:
                 self._connections_graph.add_connection(source_node, area_node, consecutive_runs,
                                                        self.number_of_iterations)
 
+    def _process_input_bits(self, input_bits: List[int]) -> Dict[int, List[str]]:
+        """
+        Generate a mapping of input bits to their connected areas from the given input bits.
+        :param input_bits: a list of bits in the input that should fire to their defined areas
+        :return: a mapping between input bit and it's areas as defined in the input stimuli mapping.
+        """
+        return {input_bit: self._input_stimuli[input_bit].target_areas
+                for input_bit in input_bits}
+
     def add_iteration(self, areas_to_areas: Dict[str, List[str]] = None,
-                      input_bits_to_areas: Dict[int, List[str]] = None,
+                      input_bits: List[int] = None,
                       stimuli_to_areas: Dict[str, List[str]] = None,
                       consecutive_runs: int = 1) -> None:
         """
         Adding an iteration to the learning sequence, consisting of firing stimuli/areas and fired-at areas/output areas
         :param stimuli_to_areas: a mapping between a stimulus and the areas/output areas it fires to
-        :param input_bits_to_areas: a mapping between a bit in the input and the areas it's stimuli fire to
+        :param input_bits: a list of bits in the input that should fire to their defined areas
         :param areas_to_areas: a mapping between an area and the areas/output areas it fires to
         :param consecutive_runs: the number of consecutive times this iteration is sent (for projection) before moving
             to the next iteration
@@ -182,8 +195,11 @@ class LearningSequence:
             self._validate_and_add_connections(SourceType.STIMULUS, stimuli_to_areas, consecutive_runs,
                                                self._verify_stimulus)
 
-        if input_bits_to_areas:
+        if input_bits:
+            input_bits_to_areas = self._process_input_bits(input_bits)
             self._validate_and_add_connections(SourceType.INPUT_BIT, input_bits_to_areas, consecutive_runs)
+        else:
+            input_bits_to_areas = None
 
         if areas_to_areas:
             self._validate_and_add_connections(SourceType.AREA, areas_to_areas, consecutive_runs,

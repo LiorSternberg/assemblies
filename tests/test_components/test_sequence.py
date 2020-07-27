@@ -2,8 +2,7 @@ from unittest import TestCase
 
 from parameterized import parameterized
 
-from learning.components.errors import SequenceRunNotInitializedOrInMidRun, IllegalOutputAreasException, NoPathException, \
-    InputStimuliMisused
+from learning.components.errors import SequenceRunNotInitializedOrInMidRun, IllegalOutputAreasException, NoPathException
 from learning.components.input import InputStimuli
 from learning.components.sequence import LearningSequence
 from tests.brain_test_utils import BrainTestUtils
@@ -21,8 +20,8 @@ class TestLearningSequence(TestCase):
     ])
     def test_sequence_one_run_per_iteration(self, name, number_of_cycles):
         input_stimuli = InputStimuli(self.brain, 100, 'A', 'B', verbose=False)
-        sequence = LearningSequence(self.brain)
-        sequence.add_iteration(input_bits_to_areas={0: ['A'], 1: ['B']})
+        sequence = LearningSequence(self.brain, input_stimuli)
+        sequence.add_iteration(input_bits=[0, 1])
         sequence.add_iteration(stimuli_to_areas={'A': ['A'], 'B': ['B']})
         sequence.add_iteration(areas_to_areas={'A': ['C'], 'B': ['C']})
         sequence.add_iteration(areas_to_areas={'C': ['output']})
@@ -71,8 +70,8 @@ class TestLearningSequence(TestCase):
 
     def test_sequence_multiple_consecutive_runs_per_iteration(self):
         input_stimuli = InputStimuli(self.brain, 100, 'A', 'B', verbose=False)
-        sequence = LearningSequence(self.brain)
-        sequence.add_iteration(input_bits_to_areas={0: ['A'], 1: ['B']}, consecutive_runs=2)
+        sequence = LearningSequence(self.brain, input_stimuli)
+        sequence.add_iteration(input_bits=[0, 1], consecutive_runs=2)
         sequence.add_iteration(stimuli_to_areas={'A': ['A'], 'B': ['B']}, consecutive_runs=2)
         sequence.add_iteration(areas_to_areas={'A': ['C'], 'B': ['C']}, consecutive_runs=3)
         sequence.add_iteration(areas_to_areas={'C': ['output']}, consecutive_runs=1)
@@ -152,7 +151,7 @@ class TestLearningSequence(TestCase):
 
     def test_sequence_with_only_stimuli(self):
         input_stimuli = InputStimuli(self.brain, 100, 'A', 'B', verbose=False)
-        sequence = LearningSequence(self.brain)
+        sequence = LearningSequence(self.brain, input_stimuli)
         sequence.add_iteration(stimuli_to_areas={'A': ['A'], 'B': ['B']})
         sequence.add_iteration(areas_to_areas={'A': ['C'], 'B': ['C']})
         sequence.add_iteration(areas_to_areas={'C': ['output']})
@@ -191,8 +190,8 @@ class TestLearningSequence(TestCase):
 
     def test_sequence_with_only_input_bits(self):
         input_stimuli = InputStimuli(self.brain, 100, 'A', 'B', verbose=False)
-        sequence = LearningSequence(self.brain)
-        sequence.add_iteration(input_bits_to_areas={0: ['A'], 1: ['B']})
+        sequence = LearningSequence(self.brain, input_stimuli)
+        sequence.add_iteration(input_bits=[0, 1])
         sequence.add_iteration(areas_to_areas={'A': ['C'], 'B': ['C']})
         sequence.add_iteration(areas_to_areas={'C': ['output']})
 
@@ -230,8 +229,8 @@ class TestLearningSequence(TestCase):
 
     def test_sequence_with_only_input_bits(self):
         input_stimuli = InputStimuli(self.brain, 100, 'A', 'B', verbose=False)
-        sequence = LearningSequence(self.brain)
-        sequence.add_iteration(input_bits_to_areas={0: ['A'], 1: ['B']})
+        sequence = LearningSequence(self.brain, input_stimuli)
+        sequence.add_iteration(input_bits=[0, 1])
         sequence.add_iteration(areas_to_areas={'A': ['C'], 'B': ['C']})
         sequence.add_iteration(areas_to_areas={'C': ['output']})
 
@@ -269,8 +268,8 @@ class TestLearningSequence(TestCase):
 
     def test_sequence_with_input_bits_and_stimuli_combines_the_dicts(self):
         input_stimuli = InputStimuli(self.brain, 100, 'A', 'B', verbose=False, override={0: ('A', 'C')})
-        sequence = LearningSequence(self.brain)
-        sequence.add_iteration(input_bits_to_areas={0: ['A'], 1: ['B']}, stimuli_to_areas={'A': ['B'], 'B': ['C']})
+        sequence = LearningSequence(self.brain, input_stimuli)
+        sequence.add_iteration(input_bits=[0, 1], stimuli_to_areas={'A': ['B'], 'B': ['C']})
         sequence.add_iteration(areas_to_areas={'A': ['C'], 'B': ['C']})
         sequence.add_iteration(areas_to_areas={'C': ['output']})
 
@@ -278,7 +277,7 @@ class TestLearningSequence(TestCase):
             {
                 'stim_to_area':
                     {
-                        'A': ['B', 'A'],
+                        'A': ['A', 'B'],
                         input_stimuli[1][0]: ['B'],
                         'B': ['C']
                     },
@@ -307,7 +306,7 @@ class TestLearningSequence(TestCase):
             {
                 'stim_to_area':
                     {
-                        'A': ['B', 'A'],
+                        'A': ['A', 'B'],
                         input_stimuli[1][1]: ['B'],
                         'B': ['C']
                     },
@@ -408,27 +407,17 @@ class TestLearningSequence(TestCase):
         for idx, iteration in enumerate(sequence):
             self.assertDictEqual(expected_iterations_11[idx], iteration.format(input_stimuli, 3))
 
-    def test_sequence_with_bad_input_bits_mapping(self):
-        input_stimuli = InputStimuli(self.brain, 100, 'A', 'B', verbose=False)
-        sequence = LearningSequence(self.brain)
-        sequence.add_iteration(input_bits_to_areas={0: ['B'], 1: ['B']})
-        sequence.add_iteration(areas_to_areas={'A': ['C'], 'B': ['C']})
-        sequence.add_iteration(areas_to_areas={'C': ['output']})
-        sequence.initialize_run(number_of_cycles=1)
-
-        for idx, iteration in enumerate(sequence):
-            self.assertRaises(InputStimuliMisused, iteration.format, input_stimuli, 0)
-            break
-
     def test_sequence_has_no_output_area(self):
-        sequence = LearningSequence(self.brain)
-        sequence.add_iteration(input_bits_to_areas={0: ['A'], 1: ['B']})
+        input_stimuli = InputStimuli(self.brain, 100, 'A', 'B', verbose=False)
+        sequence = LearningSequence(self.brain, input_stimuli)
+        sequence.add_iteration(input_bits=[0, 1])
         sequence.add_iteration(areas_to_areas={'A': ['C'], 'B': ['C']})
 
         self.assertRaises(IllegalOutputAreasException, sequence.initialize_run, 1)
 
     def test_sequence_stimulus_has_no_path_to_output(self):
-        sequence = LearningSequence(self.brain)
+        input_stimuli = InputStimuli(self.brain, 100, 'A', 'B', verbose=False)
+        sequence = LearningSequence(self.brain, input_stimuli)
         # Input bit 0 has no path to the output area
         sequence.add_iteration(stimuli_to_areas={'A': ['A'], 'B': ['B']})
         sequence.add_iteration(areas_to_areas={'B': ['C']})
@@ -437,17 +426,19 @@ class TestLearningSequence(TestCase):
         self.assertRaises(NoPathException, sequence.initialize_run, 1)
 
     def test_sequence_input_bit_has_no_path_to_output(self):
-        sequence = LearningSequence(self.brain)
+        input_stimuli = InputStimuli(self.brain, 100, 'A', 'B', verbose=False)
+        sequence = LearningSequence(self.brain, input_stimuli)
         # Input bit 0 has no path to the output area
-        sequence.add_iteration(input_bits_to_areas={0: ['A'], 1: ['B']})
+        sequence.add_iteration(input_bits=[0, 1])
         sequence.add_iteration(areas_to_areas={'B': ['C']})
         sequence.add_iteration(areas_to_areas={'C': ['output']})
 
         self.assertRaises(NoPathException, sequence.initialize_run, 1)
 
     def test_sequence_not_initialized(self):
-        sequence = LearningSequence(self.brain)
-        sequence.add_iteration(input_bits_to_areas={0: ['A'], 1: ['B']})
+        input_stimuli = InputStimuli(self.brain, 100, 'A', 'B', verbose=False)
+        sequence = LearningSequence(self.brain, input_stimuli)
+        sequence.add_iteration(input_bits=[0, 1])
         sequence.add_iteration(areas_to_areas={'A': ['C'], 'B': ['C']})
         sequence.add_iteration(areas_to_areas={'C': ['output']})
 
