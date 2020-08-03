@@ -1,4 +1,4 @@
-from typing import Callable, List
+from typing import Callable, List, Dict
 
 from learning.components.data_set.data_set import DataSet, DataSets
 from learning.components.data_set.lib.basic_types.callable_data_set import CallableDataSet as _CallableDataSet
@@ -206,7 +206,7 @@ def create_training_and_test_sets_from_callable(
     >>> test_set = data_sets.test_set
     >>> training_set = data_sets.training_set
     """
-    base_data_set = create_data_set_from_callable(data_set_function, input_size, noise_probability)
+    base_data_set = create_data_set_from_callable(data_set_function, input_size)
     return DataSets(training_set=_TrainingSet(base_data_set, mask, training_set_length, noise_probability),
                     test_set=_TestSet(base_data_set, mask))
 
@@ -258,7 +258,7 @@ def create_training_and_test_sets_from_list(
     >>> test_set = data_sets.test_set
     >>> training_set = data_sets.training_set
     """
-    base_data_set = create_data_set_from_list(data_set_return_values, noise_probability)
+    base_data_set = create_data_set_from_list(data_set_return_values)
     return DataSets(training_set=_TrainingSet(base_data_set, mask, training_set_length, noise_probability),
                     test_set=_TestSet(base_data_set, mask))
 
@@ -310,7 +310,7 @@ def create_training_set_from_callable(
     if training_set_length is None:
         training_set_length = (2 ** input_size) * DEFAULT_MULTI_FACTOR
 
-    base_data_set = create_data_set_from_callable(data_set_function, input_size, noise_probability)
+    base_data_set = create_data_set_from_callable(data_set_function, input_size)
     return _TrainingSet(base_data_set, mask, training_set_length, noise_probability)
 
 
@@ -403,7 +403,7 @@ def create_training_set_from_list(
     if training_set_length is None:
         training_set_length = data_set_size * DEFAULT_MULTI_FACTOR
 
-    base_data_set = create_data_set_from_list(data_set_return_values, noise_probability)
+    base_data_set = create_data_set_from_list(data_set_return_values)
     return _TrainingSet(base_data_set, mask, training_set_length, noise_probability)
 
 
@@ -446,4 +446,83 @@ def create_test_set_from_list(
         mask = create_explicit_mask_from_callable(lambda x: 0)
 
     base_data_set = create_data_set_from_list(data_set_return_values)
+    return _TestSet(base_data_set, mask)
+
+
+def create_training_set_from_dict(
+        data_set_dict: Dict[int, int],
+        input_size: int,
+        training_set_length: int = None,
+        noise_probability: float = 0.) -> DataSet:
+    """
+    Simplified way to create a training set from a dictionary of input values to
+    output values (output values should be binary - 0 or 1).
+    :param data_set_dict: The input-output values dictionary to generate a data
+    set from.
+    :param input_size: The size of the function's input.
+    :param training_set_length: How long should the training set iterator be.
+    Note that a training set is created by randomly choosing data points from
+    the portion of the data that belongs to the training set, so repetitions are
+    likely if the training set is made to be long enough.
+    :param noise_probability: The probability in which the data set outputs a
+    'noisy' result (bit flip). Only applies to the training set. The test set
+    is never noisy.
+    :return: The data sets representing these parameters.
+
+    Usage example:
+
+    To create a training set of length 100 with inputs of size 4 (such as 0000,
+    0001, ..., 1111), that only contains inputs 1, 3 and 5, and with noise
+    probability 0.5 (expected half the bits are flipped), one can
+    run the following:
+
+    >>> training_set = create_training_set_from_dict(
+    ...     {1: 0, 3: 1, 5: 1}, 100, noise_probability=0.5)
+
+    The returned training set is iterable, so to get the next data point one can
+    simply loop over it, like this:
+
+    >>> for data_point in training_set:
+    ...  print(data_point.input, data_point.output)
+    """
+    data_set_dict = data_set_dict.copy()
+    mask = create_explicit_mask_from_callable(lambda x: x in data_set_dict)
+
+    if training_set_length is None:
+        training_set_length = (2 ** input_size) * DEFAULT_MULTI_FACTOR
+
+    base_data_set = create_data_set_from_callable(
+        lambda x: data_set_dict.get(x, 0), input_size)
+    return _TrainingSet(base_data_set, mask, training_set_length, noise_probability)
+
+
+def create_test_set_from_dict(
+        data_set_dict: Dict[int, int],
+        input_size: int) -> DataSet:
+    """
+    Simplified way to create a test set from a dictionary of input values to
+    output values (output values should be binary - 0 or 1).
+    :param data_set_dict: The input-output values dictionary to generate a data
+    set from.
+    :param input_size: The size of the function's input.
+    :return: The data sets representing these parameters.
+
+    Usage example:
+
+    To create a test set with inputs of size 4 (such as 0000, 0001, ..., 1111),
+    that only contains inputs 1, 3 and 5, one can run the following:
+
+    >>> test_set = create_test_set_from_dict({1: 0, 3: 1, 5: 1}, 4)
+
+    The returned test set is iterable, so to get the next data point one can
+    simply loop over it, like this:
+
+    >>> for data_point in test_set:
+    ...  print(data_point.input, data_point.output)
+    """
+    data_set_dict = data_set_dict.copy()
+    mask = create_explicit_mask_from_callable(lambda x: x not in data_set_dict)
+
+    base_data_set = create_data_set_from_callable(
+        lambda x: data_set_dict.get(x, 0), input_size)
     return _TestSet(base_data_set, mask)

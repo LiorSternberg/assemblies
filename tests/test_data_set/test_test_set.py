@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from learning.components.data_set.constructors import create_explicit_mask_from_list, create_test_set_from_callable, \
-    create_lazy_mask
+    create_lazy_mask, create_test_set_from_dict
 from learning.components.data_set.data_point import DataPoint
 
 
@@ -55,3 +55,12 @@ class TestTestSet(TestCase):
         self.assertNotIn(5, indices)
         self.assertNotIn(6, indices)
         self.assertNotIn(7, indices)
+
+    def test_create_test_set_from_dict(self):
+        data_set_dict = {1: 0, 3: 1, 5: 1}
+        test_set = create_test_set_from_dict(data_set_dict, 4)
+        data_points = [(data_point.input, data_point.output)
+                       for data_point in test_set]
+
+        self.assertEqual(3, len(data_points))
+        self.assertEqual([(1, 0), (3, 1), (5, 1)], data_points)
